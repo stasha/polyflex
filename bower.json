@@ -1,0 +1,13 @@
+{
+	"name": "polyflex",
+	"version": "0.0.1-SNAPSHOT",
+	"main": "path/to/main.css",
+	"ignore": [
+		".jshintrc",
+		"**/*.txt"
+	],
+	"dependencies": {
+	},
+	"devDependencies": {
+	}
+}
