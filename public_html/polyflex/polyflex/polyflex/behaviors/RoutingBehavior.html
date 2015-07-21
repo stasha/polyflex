@@ -1,0 +1,176 @@
+<link rel="import" href="../_imports/page.js.html" />
+
+<script>
+
+	(function (window, page) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+		/**
+		 * 
+		 */
+		behaviors.RoutingBehavior = {
+			_router: null,
+			routes: null,
+			route: null,
+			properties: {
+				url: {
+					type: String,
+					observer: "urlPatternChanged"
+				}
+			},
+			/**
+			 * Url pattern change observing function.
+			 * This function is invoked every time url property changes.
+			 * 
+			 * @param {type} newValue
+			 * @returns {undefined}
+			 */
+			urlPatternChanged: function (newValue) {
+				if (newValue) {
+					this.addRoute(newValue, this.urlChanged, this);
+				}
+			},
+			/**
+			 * Invoked by url router when url changes.
+			 * 
+			 * @param {type} context
+			 * @returns {undefined}
+			 */
+			urlChanged: function (context) {
+				//console.log("urlChanged method not implemented")
+			},
+			/**
+			 * Returns url router element.
+			 * 
+			 * @returns {Element}
+			 */
+			get router() {
+				if (!this._router) {
+					this._router = document.querySelector("url-router");
+				}
+				return this._router;
+			},
+			/**
+			 * When this component is attached to DOM, urlPattenrChanged 
+			 * function in url router is invoked. If url matches to url this 
+			 * container is listening for, than urlChanged function is invoked. 
+			 * This enshures that new attached elements are updated by correct 
+			 * data from server.
+			 * 
+			 * @returns {undefined}
+			 */
+			attached: function () {
+				if (this.isUrlMatching()) {
+					this.urlChanged(page.current, null);
+				}
+			},
+			/**
+			 * Performs matching between this element url and 
+			 * current browser url. If url matches than page.Context is 
+			 * returned otherwis false is returned.
+			 * 
+			 * @param {type} urlPattern
+			 * returns page.Context | false
+			 */
+			isUrlMatching: function (urlPattern) {
+				var pattern = urlPattern || this.url;
+				if (pattern) {
+					var ctx = new page.Context(page.current);
+					var route = new page.Route(pattern);
+					if (route.match(ctx.path, ctx.params)) {
+						return ctx;
+					}
+				}
+				return false;
+			},
+			/**
+			 * Invoked when this element is removed from DOM.
+			 * It cleans up registered routes.
+			 * 
+			 * @returns {undefined}
+			 */
+			detached: function () {
+				this.removeAllroutes();
+				this._router = null;
+			},
+			/**
+			 * Registers route in url router.
+			 * 
+			 * @param {type} route
+			 * @param {type} callback
+			 * @param {type} context
+			 * @returns {undefined}
+			 */
+			addRoute: function (route, callback, context) {
+
+				if (!route || !callback) {
+					return;
+				}
+
+				var ctx = context || this;
+
+				this.routes = this.routes || [];
+
+				for (var i = 0; i < this.routes.length; ++i) {
+					var rt = this.routes[i];
+					if (rt.route === route && rt.callback === callback && rt.context === context) {
+						return;
+					}
+				}
+
+				if (this.router !== this) {
+					this.router.addRoute(route, callback, context);
+				}
+
+				this.routes.push({route: route, callback: callback, context: ctx});
+			},
+			/**
+			 * Removes registered route by this element from url router.
+			 * 
+			 * @param {type} route
+			 * @param {type} callback
+			 * @param {type} context
+			 * @returns {undefined}
+			 */
+			removeRoute: function (route, callback, context) {
+				if (!route) {
+					return;
+				}
+
+				for (var i = 0; i < this.routes.length; ++i) {
+					var rt = this.routes[i];
+					if (rt.route === route && rt.callback === callback && rt.context === context) {
+						this.router.removeRoute(route, callback, context);
+						this.routes.splice(i, 1);
+						break;
+					}
+				}
+
+			},
+			/**
+			 * Removes all registered routes by this element from url router.
+			 * 
+			 * @param {type} context
+			 * @returns {undefined}
+			 */
+			removeAllroutes: function (context) {
+				if (!this.routes) {
+					return;
+				}
+				context = context || this;
+
+				for (var i = 0; i < this.routes.length; ++i) {
+					var rt = this.routes[i];
+					this.removeRoute(rt.route, rt.callback, rt.context);
+					i = -1;
+				}
+			}
+		};
+
+	})(window, window.page);
+
+</script>

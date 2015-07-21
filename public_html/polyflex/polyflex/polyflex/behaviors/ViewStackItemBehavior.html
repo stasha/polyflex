@@ -1,0 +1,99 @@
+<link rel="import" href="CoreBehavior.html" />
+
+<script>
+	(function (window) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+		/**
+		 * View-stack item behavior.
+		 * Contains "life-cycle" functions invoked by view-stack while changing
+		 * items.
+		 * 
+		 * functions are called in this order:
+		 * 
+		 * if there was no previous item visible:
+		 * 
+		 * 1. preShown,
+		 * 2. startShowing,
+		 * 3. shown,
+		 * 
+		 * 
+		 * otherwise:
+		 * 
+		 * 1. preHidden,
+		 * 2. preShown,
+		 * 3. startHidding,
+		 * 4. hidden,
+		 * 5. startShowing,
+		 * 6. shown
+		 * 
+		 */
+		behaviors.ViewStackItemBehavior = {
+			behaviors: [behaviors.CoreBehavior],
+			/**
+			 * Invoked before item start to show.
+			 * 
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			preShown: function (e) {
+				this.log("pre shown");
+			},
+			
+			/**
+			 * Invoked when item starts to show.
+			 * Difference between preShown and startShowing is that startShowing
+			 * can be invoked later depending on showEffect set in view-stack
+			 * component.
+			 * 
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			startShowing: function (e) {
+				this.log("start showing");
+			},
+			/**
+			 * Invoked when item is completely shown "visible" on the screen.
+			 * 
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			shown: function (e) {
+				this.log("shown");
+			},
+			/**
+			 * Invoked when before item starts to hide.
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			preHidden: function (e) {
+				this.log("pre hidden");
+			},
+			/**
+			 * Invoked when item begins hiding.
+			 * 
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			startHiding: function (e) {
+				this.log("start hiding");
+			},
+			/**
+			 * Invoked when item is completely hidden "unvisible".
+			 * 
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			hidden: function (e) {
+				this.log("hidden");
+			}
+		};
+
+	})(window);
+
+</script>

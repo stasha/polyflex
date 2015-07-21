@@ -1,0 +1,84 @@
+<link rel="import" href="../_imports/polymer.html" />
+<link rel="import" href="../_imports/page.js.html" />
+
+<link rel="import" href="../behaviors/CoreBehavior.html" />
+<link rel="import" href="../behaviors/RoutingBehavior.html" />
+
+<dom-module id="url-router">
+
+	<script>
+		(function (window, page) {
+
+			"use strict";
+
+			var polyflex = window.polyflex = window.polyflex || {};
+			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+			Polymer({
+				is: "url-router",
+				behaviors: [behaviors.CoreBehavior],
+				routes: [],
+				properties: {
+					base: {
+						type: String,
+						observer: "setBase"
+					}
+				},
+				setBase: function (newValue) {
+					if (newValue) {
+						page.base(newValue);
+						this.log("Setting base url to: " + newValue);
+					}
+				},
+				attached: function () {
+					this.addRoute("*", function () {
+					}, this);
+				},
+				detached: function () {
+					page.stop();
+					this.log("Router stopped.");
+				},
+				addRoute: function (route, callback, context) {
+
+					this.routes = this.routes || [];
+
+					for (var i = 0; i < this.routes.length; ++i) {
+						var rt = this.routes[i];
+						if (rt.route === route && rt.callback === callback && rt.context === context) {
+							return;
+						}
+					}
+
+					this.routes.push({route: route, callback: callback, context: context});
+
+					var self = this;
+					page(route, function (ctx, next) {
+						for (var i = 0; i < self.routes.length; ++i) {
+							var rt = self.routes[i];
+							if (rt.route === route) {
+								rt.callback.call(rt.context, ctx, next);
+							}
+						}
+					});
+
+					page.start();
+				},
+				removeRoute: function (route, callback, context) {
+					if (!route || !this.routes) {
+						return;
+					}
+
+					for (var i = 0; i < this.routes.length; ++i) {
+						var rt = this.routes[i];
+						if (rt.route === route && rt.callback === callback && rt.context === context) {
+							this.routes.splice(i, 1);
+							break;
+						}
+					}
+				}
+			});
+
+		})(window, window.page);
+	</script>
+</dom-module>

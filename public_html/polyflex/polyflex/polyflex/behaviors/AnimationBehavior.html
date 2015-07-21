@@ -1,0 +1,72 @@
+<link rel="import" href="../_imports/tweenmax.html" />
+<link rel="import" href="CoreBehavior.html" />
+
+<script>
+	(function (window, tweenEngine) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+		/**
+		 * Core ajax behavior for performing ajax communication with backend
+		 * services.
+		 */
+		behaviors.AnimationBehavior = {
+			tween: null,
+			provider: tweenEngine,
+			properties: {
+				element: {
+					type: Object
+				},
+				from: {
+					type: Number,
+					value: 0
+				},
+				to: {
+					type: Number,
+					value: 1
+				},
+				speed: {
+					type: Number,
+					value: 0.5
+				},
+				delay: {
+					type: Number,
+					value: 0
+				}
+			},
+			start: function () {
+
+			},
+			stop: function () {
+				this.tween && this.tween.stop();
+			},
+			pause: function () {
+				this.tween && this.tween.pause();
+			},
+			resume: function () {
+				this.tween && this.tween.resume();
+			},
+			reverse: function () {
+				this.tween && this.tween.reverse();
+			},
+			seek: function (time) {
+				this.tween && this.tween.seek(time);
+			},
+			timeScale: function (scale) {
+				this.tween && this.tween.timeScale(scale);
+			},
+			kill: function () {
+				this.tween && this.tween.kill();
+			},
+			clone: function () {
+				return $.extend({}, this);
+			}
+		};
+
+	})(window, window.TweenMax);
+
+</script>

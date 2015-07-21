@@ -1,0 +1,35 @@
+<link rel="import" href="../../polymer/polymer.html" />
+
+<link rel="import" href="behaviors/CoreBehavior.html" />
+<link rel="import" href="behaviors/RoutingBehavior.html" />
+<link rel="import" href="behaviors/AjaxBehavior.html" />
+<link rel="import" href="behaviors/AjaxElementBehavior.html" />
+<link rel="import" href="behaviors/ViewStackItemBehavior.html" />
+
+<dom-module id="ajax-container">
+	<template>
+		<content></content>
+	</template>
+
+	<script>
+
+		(function (window) {
+
+			"use strict";
+
+			var polyflex = window.polyflex;
+			var behaviors = polyflex.behaviors;
+
+			Polymer({
+				is: "ajax-container",
+				behaviors: [
+					behaviors.CoreBehavior,
+					behaviors.RoutingBehavior,
+					behaviors.AjaxBehavior,
+					behaviors.AjaxElementBehavior,
+					behaviors.ViewStackItemBehavior
+				]
+			});
+		})(window);
+	</script>
+</dom-module>

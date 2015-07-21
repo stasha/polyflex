@@ -1,13 +1,17 @@
 {
-	"name": "polyflex",
-	"version": "0.0.1-SNAPSHOT",
-	"main": "path/to/main.css",
-	"ignore": [
-		".jshintrc",
-		"**/*.txt"
-	],
-	"dependencies": {
-	},
-	"devDependencies": {
-	}
+  "name": "polyflex",
+  "version": "0.0.1-SNAPSHOT",
+  "ignore": [
+    ".jshintrc",
+    "**/*.txt"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "select2": "~4.0.0",
+    "jbone": "~1.1.0",
+    "gsap": "~1.17.0",
+    "superagent": "stasha/superagent#~1.2.0",
+    "page": "stasha/page.js#~1.6.3"
+  },
+  "devDependencies": {}
 }

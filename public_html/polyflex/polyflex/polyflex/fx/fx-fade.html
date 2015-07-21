@@ -1,0 +1,35 @@
+<link rel="import" href="../_imports/polymer.html" />
+<link rel="import" href="../behaviors/AnimationBehavior.html" />
+
+
+<dom-module id="fx-fade">
+	<script>
+
+		(function (window) {
+
+			"use strict";
+
+			var polyflex = window.polyflex = window.polyflex || {};
+			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+			Polymer({
+				is: "fx-fade",
+				behaviors: [behaviors.AnimationBehavior],
+				start: function (element, context, onStart, onUpdate, onComplete) {
+					this.tween = this.provider.to(element, this.speed, {
+						opacity: this.to,
+						delay: this.delay,
+						overwrite: "all",
+						onStart: onStart,
+						onUpdate: onUpdate,
+						onComplete: onComplete,
+						onCompleteParams: [this, element, context]
+					});
+
+					return this.tween;
+				}
+			});
+
+		})(window);
+	</script>
+</dom-module>

@@ -1,0 +1,110 @@
+<script>
+	(function (window) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+		/**
+		 * Behavior containing core functionality.
+		 * 
+		 * @type type
+		 */
+		behaviors.CoreBehavior = {
+			customElements: [],
+			properties: {
+				debug: {
+					type: Boolean,
+					value: false
+				},
+				isRemoved: {
+					type: Boolean
+				}
+			},
+			ready: function () {
+				this.dispatchEvent(new CustomEvent("child-ready", {bubbles: true, cancelable: true}));
+			},
+			attached: function () {
+				this.isRemoved = false;
+				this.dispatchEvent(new CustomEvent("child-added", {bubbles: true, cancelable: true}));
+				this.customElements.push(this);
+			},
+			detached: function () {
+				this.isRemoved = true;
+				this.customElements.splice(this.customElements.indexOf(this), 1);
+				if (this._lightParent) {
+					this._lightParent.dispatchEvent(new CustomEvent("child-removed", {bubbles: true, cancelable: true}));
+				}
+			},
+			get isInDebugMode() {
+				return document.getElementsByTagName("html")[0].className.indexOf("debug") > -1;
+			},
+			/**
+			 * Invoked when this comonent is ready.
+			 * 
+			 * @returns {undefined}
+			 */
+			created: function () {
+				window.addEventListener('WebComponentsReady', this.webComponentsReady);
+			},
+			/**
+			 * Invoked when all webcomponents are ready.
+			 * 
+			 * @returns {undefined}
+			 */
+			webComponentsReady: function () {
+				window.removeEventListener('WebComponentsReady', this.webComponentsReady);
+			},
+			/**
+			 * Returns body element
+			 * 
+			 * @returns {Element}
+			 */
+			get body() {
+				return document.querySelector("body");
+			},
+			/**
+			 * Logs messages if debug is set to true.
+			 * 
+			 * @param {type} arg
+			 * @returns {undefined}
+			 */
+			log: function (arg) {
+				if (this.debug || this.isInDebugMode) {
+					console.log(arg);
+				}
+			},
+			/**
+			 * Converts string to array based on space or coma separator.
+			 * 
+			 * @param {type} str
+			 * @returns {Array}
+			 */
+			stringToArray: function (str) {
+				if (!str) {
+					return [];
+				}
+				var normalizedStr = str.toString().replace(/,/g, " ");
+				normalizedStr = normalizedStr.replace(/\s+/g, " ");
+				var strArr = normalizedStr.split(" ");
+				return strArr;
+			},
+			/**
+			 * Prevents default behavior.
+			 * 
+			 * @param {type} e
+			 * @returns {undefined}
+			 */
+			preventDefault: function (e) {
+				if (e.currentTarget.customElement) {
+					e.currentTarget.customElement.log("Preventing default behavior.");
+				}
+				e.preventDefault();
+			}
+		};
+
+	})(window);
+
+</script>

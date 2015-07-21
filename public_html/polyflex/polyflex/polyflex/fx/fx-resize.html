@@ -1,0 +1,48 @@
+<link rel="import" href="../_imports/polymer.html" />
+<link rel="import" href="../behaviors/AnimationBehavior.html" />
+
+
+<dom-module id="fx-resize">
+	<script>
+
+		(function (window) {
+
+			"use strict";
+
+			var polyflex = window.polyflex = window.polyflex || {};
+			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+
+			Polymer({
+				is: "fx-resize",
+				behaviors: [behaviors.AnimationBehavior],
+				properties: {
+					toWidth: {
+						type: String,
+						value: 0
+					},
+					toHeight: {
+						type: String,
+						value: 0
+					}
+				},
+				start: function (element, context, onStart, onUpdate, onComplete) {
+					this.tween = this.provider.to(element, this.speed, {
+						width: this.toWidth,
+						height: this.toHeight,
+						delay: this.delay,
+						overwrite: "all",
+						onStart: onStart,
+						onUpdate: onUpdate,
+						onComplete: onComplete,
+						onCompleteParams: [this, element, context]
+					});
+
+					return this.tween;
+				}
+			});
+
+		})(window);
+	</script>
+</dom-module>

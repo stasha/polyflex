@@ -1,0 +1,82 @@
+<link rel="import" href="CoreBehavior.html" />
+<link rel="import" href="AjaxBehavior.html" />
+<link rel="import" href="RoutingBehavior.html" />
+
+<script>
+
+	(function (window) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+		/**
+		 * 
+		 */
+		behaviors.AjaxElementBehavior = {
+			behaviors: [behaviors.CoreBehavior, behaviors.AjaxBehavior, behaviors.RoutingBehavior],
+			properties: {
+				preventInvokingRequestOnUrlChanged: {
+					type: Boolean,
+					value: false
+				}
+			},
+			/**
+			 * Invoked by url router when url changes.
+			 * 
+			 * @param {type} context
+			 * @returns {undefined}
+			 */
+			urlChanged: function (context) {
+				// Automatic invoking of requests when url changes 
+				// can be prevented.
+				if (!this.preventInvokingRequestOnUrlChanged) {
+					this.invokeRequest(context);
+				}
+			},
+			/**
+			 * Invokes debounced request. 
+			 * 
+			 * @param {type} routeContext
+			 * @returns {undefined}
+			 */
+			invokeRequest: function (routeContext) {
+				this.debounce(this.invokeRequestName, function () {
+					this.sendRequest(routeContext);
+				}, 400);
+			},
+			/**
+			 * Sends request to the server.
+			 * 
+			 * @param {type} routeContext
+			 * @returns {undefined}
+			 */
+			sendRequest: function (routeContext) {
+				var self = this;
+				this.get({
+					url: routeContext.path,
+					context: this,
+					data: routeContext.params,
+					query: routeContext.queryString,
+					callback: function (error, response) {
+						self.response(error, response);
+					}
+				});
+			},
+			/**
+			 * Response invoked when ajax data returns.
+			 * 
+			 * @param error
+			 * @param response
+			 * @returns undefined
+			 */
+			response: function (error, response) {
+				this.log(error);
+				this.log(response);
+			}
+		};
+
+	})(window);
+
+</script>

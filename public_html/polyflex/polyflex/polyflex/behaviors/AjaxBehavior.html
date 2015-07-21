@@ -1,0 +1,123 @@
+<link rel="import" href="../_imports/superagent.html" />
+<link rel="import" href="CoreBehavior.html" />
+
+<script>
+	(function (window, request) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+		/**
+		 * Core ajax behavior for performing ajax communication with backend
+		 * services.
+		 */
+		behaviors.AjaxBehavior = {
+			behaviors: [behaviors.CoreBehavior],
+			_ajax: null,
+			properties: {
+				ajaxBase: {
+					type: String,
+					value: ""
+				}
+			},
+			/**
+			 * Return ajax-base instance.
+			 * 
+			 * @returns {ajax-base} instance
+			 */
+			get ajax() {
+				this._ajax = this._ajax || document.querySelector("ajax-base");
+				return this._ajax;
+			},
+			/**
+			 * Base url for communication.
+			 * Example: //mydomain.com/my-ajax-gateway/
+			 * 
+			 * @returns {String}
+			 */
+			getBase: function () {
+				return this.ajaxBase || this.ajax.ajaxBase;
+			},
+			/**
+			 * Builds url that will be used for sending request.
+			 * 
+			 * @param {type} url
+			 * @returns {String}
+			 */
+			buildUrl: function (url) {
+				var index = url.indexOf("//");
+				if (index > 0 && index < 8) {
+					return url;
+				}
+
+				return this.getBase() + url;
+			},
+			/**
+			 * Performs get request.
+			 * 
+			 * @param {type} options
+			 * @returns {undefined}
+			 */
+			get: function (options) {
+				var req = this.buildRequest("get", options.url);
+				req.query(options.data);
+				req.query(options.query);
+				this.send(req, options);
+			},
+			/**
+			 * Performs post request.
+			 * 
+			 * @param {type} options
+			 * @returns {undefined}
+			 */
+			post: function (options) {
+				var req = this.buildRequest("post", options.url);
+			},
+			/**
+			 * Performs put request.
+			 * 
+			 * @param {type} options
+			 * @returns {undefined}
+			 */
+			put: function (options) {
+				var req = this.buildRequest("put", options.url);
+			},
+			/**
+			 * Performs delete request.
+			 * 
+			 * @param {type} options
+			 * @returns {undefined}
+			 */
+			del: function (options) {
+				var req = this.buildRequest("del", options.url);
+			},
+			/**
+			 * Creates request object based on passed parameters.
+			 * 
+			 * @param {type} method
+			 * @param {type} url
+			 * @returns {unresolved}
+			 */
+			buildRequest: function (method, url) {
+				return request[method](this.buildUrl(url));
+			},
+			/**
+			 * Performs request and invokes callback if any.
+			 * 
+			 * @param {type} req
+			 * @param {type} options
+			 * @returns {undefined}
+			 */
+			send: function (req, options) {
+				req.end(function (error, response) {
+					options.callback.call((options.context || this), error, response);
+				});
+			}
+		};
+
+	})(window, window.request);
+
+</script>
