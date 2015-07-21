@@ -10,8 +10,9 @@
     "select2": "~4.0.0",
     "jbone": "~1.1.0",
     "gsap": "~1.17.0",
-    "superagent": "stasha/superagent#~1.2.0",
-    "page": "stasha/page.js#~1.6.3"
+    "superagent": "stasha/superagent#~1.2.1",
+    "page": "stasha/page.js#~1.6.4",
+    "emitter": "component/emitter#~1.2.0"
   },
   "devDependencies": {}
 }
