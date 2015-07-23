@@ -2,13 +2,18 @@
 <link rel="import" href="CoreBehavior.html" />
 
 <script>
-	(function (window, request) {
+	(function (window) {
 
 		"use strict";
 
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 
+		var request = window.request;
+		
+		if(!request){
+			throw "AjaxBehavior request is not set!";
+		}
 
 		/**
 		 * Core ajax behavior for performing ajax communication with backend
@@ -118,6 +123,6 @@
 			}
 		};
 
-	})(window, window.request);
+	})(window);
 
 </script>

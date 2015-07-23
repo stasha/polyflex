@@ -1,0 +1,71 @@
+<link rel="import" href="../_imports/event-libs.html" />
+<link rel="import" href="CoreBehavior.html" />
+
+
+<script>
+	(function (window) {
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+		var bean = window.bean;
+		var nerve = window.nerve;
+
+		behaviors.EventBehavior = {
+			defaultMessageChannel: "channel:" + new Date().getTime(),
+			properties: {
+				autoRemoveEventsListeners: {
+					type: Boolean,
+					value: false
+				},
+				autoRemoveMessageListeners: {
+					type: Boolean,
+					value: false
+				}
+			},
+			detached: function () {
+				if (this.autoRemoveEventsListeners) {
+					this.log("Auto removing event listeners.");
+					bean.off(this);
+				}
+				if(this.autoRemoveMessageListeners){
+					this.log("Auto removing message listeners");
+				}
+			},
+			on: function (element, events, selector, fn) {
+				bean.on(element, events, selector, fn);
+			},
+			one: function (element, events, selector, fn) {
+				bean.one(element, events, selector, fn);
+			},
+			off: function (element, typeSpec, fn) {
+				bean.off(element, typeSpec, fn);
+			},
+			clone: function (element, from, type) {
+				bean.clone(element, from, type);
+			},
+			trigger: function (element, type, args) {
+				bean.fire(element, type, args);
+			},
+			onMessage: function (obj) {
+				obj.channel = obj.channel || this.defaultMessageChannel;
+				obj.context = obj.context || this;
+				nerve.on(obj);
+			},
+			offMessage: function (obj) {
+				obj.channel = obj.channel || this.defaultMessageChannel;
+				obj.context = obj.context || this;
+				nerve.off(obj);
+			},
+			sendMessage: function (obj) {
+				obj.channel = obj.channel || this.defaultMessageChannel;
+				obj.context = obj.context || this;
+				nerve.send(obj);
+			}
+
+		};
+
+	})(window);
+</script>

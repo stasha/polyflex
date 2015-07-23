@@ -2,6 +2,7 @@
 <link rel="import" href="_imports/jbone.html" />
 
 <link rel="import" href="behaviors/CoreBehavior.html" />
+<link rel="import" href="behaviors/EventBehavior.html" />
 <link rel="import" href="behaviors/RoutingBehavior.html" />
 
 <dom-module id="view-stack">
@@ -39,7 +40,7 @@
 
 			Polymer({
 				is: "view-stack",
-				behaviors: [behaviors.CoreBehavior, behaviors.RoutingBehavior],
+				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior, behaviors.RoutingBehavior],
 				items: null,
 				routeContext: null,
 				_lastSelectedIndex: 0,
@@ -90,8 +91,6 @@
 					this._urls = [];
 					this.items = this.querySelectorAll("view-stack > *");
 
-					this.removeAllroutes(this);
-
 					for (var i = 0; i < this.items.length; ++i) {
 						var item = this.items[i];
 						item.index = i;
@@ -120,13 +119,16 @@
 						this._urls[url].push(item.index);
 
 						item.preventInvokingRequestOnUrlChanged = true;
+						var self = this;
+						this.onMessage({
+							channel: "page-route",
+							route: url,
+							callback: function (context) {
+								self.urlChanged(context, item);
+							}
+						});
 
-						this.addRoute(url, function (context) {
-							this.cancelDebouncer("URL-CHANGED");
-							this.debounce("URL-CHANGED", function () {
-								this.urlChanged(context, item);
-							}, 1);
-						}, this);
+						this.router.addRoute(url);
 
 					}
 				},

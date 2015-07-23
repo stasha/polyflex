@@ -1,3 +1,5 @@
+<link rel="import" href="CoreBehavior.html" />
+<link rel="import" href="EventBehavior.html" />
 <link rel="import" href="../_imports/page.js.html" />
 
 <script>
@@ -16,6 +18,7 @@
 			_router: null,
 			routes: null,
 			route: null,
+			behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior],
 			properties: {
 				url: {
 					type: String,
@@ -31,7 +34,7 @@
 			 */
 			urlPatternChanged: function (newValue) {
 				if (newValue) {
-					this.addRoute(newValue, this.urlChanged, this);
+					this.router.addRoute(newValue, this.urlChanged, this);
 				}
 			},
 			/**
@@ -97,78 +100,13 @@
 				this.removeAllroutes();
 				this._router = null;
 			},
-			/**
-			 * Registers route in url router.
-			 * 
-			 * @param {type} route
-			 * @param {type} callback
-			 * @param {type} context
-			 * @returns {undefined}
-			 */
-			addRoute: function (route, callback, context) {
-
-				if (!route || !callback) {
-					return;
-				}
-
-				var ctx = context || this;
-
-				this.routes = this.routes || [];
-
-				for (var i = 0; i < this.routes.length; ++i) {
-					var rt = this.routes[i];
-					if (rt.route === route && rt.callback === callback && rt.context === context) {
-						return;
-					}
-				}
-
-				if (this.router !== this) {
-					this.router.addRoute(route, callback, context);
-				}
-
-				this.routes.push({route: route, callback: callback, context: ctx});
+			onRoute: function(element, route, callback){
+				this.on(element, "route:" + route, callback);
 			},
-			/**
-			 * Removes registered route by this element from url router.
-			 * 
-			 * @param {type} route
-			 * @param {type} callback
-			 * @param {type} context
-			 * @returns {undefined}
-			 */
-			removeRoute: function (route, callback, context) {
-				if (!route) {
-					return;
-				}
-
-				for (var i = 0; i < this.routes.length; ++i) {
-					var rt = this.routes[i];
-					if (rt.route === route && rt.callback === callback && rt.context === context) {
-						this.router.removeRoute(route, callback, context);
-						this.routes.splice(i, 1);
-						break;
-					}
-				}
-
-			},
-			/**
-			 * Removes all registered routes by this element from url router.
-			 * 
-			 * @param {type} context
-			 * @returns {undefined}
-			 */
-			removeAllroutes: function (context) {
-				if (!this.routes) {
-					return;
-				}
-				context = context || this;
-
-				for (var i = 0; i < this.routes.length; ++i) {
-					var rt = this.routes[i];
-					this.removeRoute(rt.route, rt.callback, rt.context);
-					i = -1;
-				}
+			offRoute: function(element, route, callback){
+				this.off(element, "route:" + route, callback);
 			}
+			
 		};
 
 	})(window, window.page);
