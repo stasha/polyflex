@@ -1,0 +1,52 @@
+<script>var module = module || {};</script>
+<link rel="import" href="../../../polymer/polymer.html" />
+<script src="../../../extend.js/extend.js"></script>
+<script src="../../../bean/bean.min.js"></script>
+<script src="../../../nerve/nerve.min.js"></script>
+<script src="../../../page/page.js"></script>
+<script src="../../../emitter/index.js"></script>
+<script src="../../../superagent/lib/client.js"></script>
+<script src="../../../gsap/src/minified/TweenMax.min.js"></script>
+<script src="../_globals/globals.js"></script>
+
+<link rel="import" href="url-router.html" />
+<link rel="import" href="ajax-base.html" />
+<link rel="import" href="../view-stack.html" />
+<link rel="import" href="../ajax-container.html" />
+<link rel="import" href="../fx/fx-fade.html" />
+<link rel="import" href="../fx/fx-resize.html" />
+
+<dom-module id="polyflex-base">
+
+	<template>
+		<url-router base="{{routerRoot}}"></url-router>
+		<ajax-base ajax-base="{{ajaxRoot}}"></ajax-base>
+	</template>
+
+
+	<script>
+	(function (window) {
+		
+		Polymer({
+			is: "polyflex-base",
+			
+			properties: {
+				routerRoot: {
+					type: String
+				},
+				ajaxRoot: {
+					type: String
+				}
+			},
+			created: function(){
+				window.polyflex.update();
+			},
+			ready: function () {
+			},
+			attached: function () {
+				console.log("test");
+			}
+		});
+	})(window);
+	</script>
+</dom-module>

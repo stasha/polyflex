@@ -1,0 +1,68 @@
+<dom-module id="polyflex-globals-override">
+
+	<script>
+		/**
+		 * This is just simple example on how to update polyflex globals.js.
+		 * 
+		 * You could create one component for registering 
+		 * new Urls, one for new Events or new Channels.
+		 * 
+		 * All created components should apear before "polyflex-base" tag 
+		 * in html document.
+		 */
+		(function (window) {
+
+			Polymer({
+				is: "polyflex-globals-override",
+				/**
+				 * Invoked when this component is created.
+				 * 
+				 * @returns {undefined}
+				 */
+				created: function () {
+					var polyflex = window.polyflex;
+					var Event = polyflex.Event = polyflex.Event || {};
+					var Channel = polyflex.Channel = polyflex.Channel || {};
+					var Url = polyflex.Url = polyflex.Url || {};
+
+					// Register new events
+					Event.MY_NEW_EVENT = "my-new-event";
+
+					// Register new channel
+					Channel.MY_NEW_CHANNEL = "my-new-channel";
+
+					// Register new url routes
+					Url.HOME = "/home";
+					Url.ABOUT = "/about";
+					Url.USER = "/user/:id";
+
+					var urlData = {
+						HOME :{
+							title: "Home Title"
+						}
+					};
+					
+					console.log()
+					
+
+
+					// update after every change to globals.js;
+					polyflex.update();
+
+					print(polyflex.channels);
+					print(polyflex.events);
+					print(polyflex.urls);
+					console.log("----");
+
+
+					function print(obj) {
+						console.log("----");
+						for (var i in obj) {
+							console.log(i + " : " + obj[i]);
+						}
+					}
+				}
+			});
+		})(window);
+	</script>
+</dom-module>
