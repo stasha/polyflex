@@ -1,4 +1,3 @@
-<link rel="import" href="../_imports/event-libs.html" />
 <link rel="import" href="CoreBehavior.html" />
 
 
@@ -15,12 +14,21 @@
 
 		behaviors.EventBehavior = {
 			defaultMessageChannel: "channel:" + new Date().getTime(),
+			behaviors: [behaviors.CoreBehavior],
 			properties: {
 				autoRemoveEventsListeners: {
 					type: Boolean,
 					value: false
 				},
 				autoRemoveMessageListeners: {
+					type: Boolean,
+					value: false
+				},
+				disableEventNameChecking: {
+					type: Boolean,
+					value: false
+				},
+				disableMessageChannelChecking: {
 					type: Boolean,
 					value: false
 				}
@@ -30,41 +38,165 @@
 					this.log("Auto removing event listeners.");
 					bean.off(this);
 				}
-				if(this.autoRemoveMessageListeners){
+				if (this.autoRemoveMessageListeners) {
 					this.log("Auto removing message listeners");
 				}
 			},
+			/**
+			 * Registers event listener on element or object.
+			 * 
+			 * @param {type} element
+			 * @param {type} events
+			 * @param {type} selector
+			 * @param {type} fn
+			 * @returns {undefined}
+			 */
 			on: function (element, events, selector, fn) {
+				this.checkEvent(events, "on");
 				bean.on(element, events, selector, fn);
 			},
+			/**
+			 * Registers event listener on element or object that is
+			 * triggered only once.
+			 * 
+			 * @param {type} element
+			 * @param {type} events
+			 * @param {type} selector
+			 * @param {type} fn
+			 * @returns {undefined}
+			 */
 			one: function (element, events, selector, fn) {
+				this.checkEvent(events, "one");
 				bean.one(element, events, selector, fn);
 			},
-			off: function (element, typeSpec, fn) {
-				bean.off(element, typeSpec, fn);
+			/**
+			 * Removes event listener.
+			 * 
+			 * @param {type} element
+			 * @param {type} events
+			 * @param {type} fn
+			 * @returns {undefined}
+			 */
+			off: function (element, events, fn) {
+				this.checkEvent(events);
+				bean.off(element, events, fn);
 			},
+			/**
+			 * Clones event listener to new element/object from specified 
+			 * element/object.
+			 * 
+			 * @param {type} element
+			 * @param {type} from
+			 * @param {type} type
+			 * @returns {undefined}
+			 */
 			clone: function (element, from, type) {
+				this.checkEvent(type);
 				bean.clone(element, from, type);
 			},
+			/**
+			 * Triggers/dispatches event.
+			 * 
+			 * @param {type} element
+			 * @param {type} type
+			 * @param {type} args
+			 * @returns {undefined}
+			 */
 			trigger: function (element, type, args) {
+				//this.checkEvent(type);
 				bean.fire(element, type, args);
 			},
+			/**
+			 * Registers message listener on channel.
+			 * {channel: "my-channel", function(ctx){console.log(ctx)}}
+			 * {channel: "my-channel", route: "my-route", function(ctx){console.log(ctx)}}
+			 * {channel: "my-channel", route: "my-route", function(ctx){console.log(ctx)}, scope: this}
+			 * 
+			 * @param {type} obj
+			 * @returns {undefined}
+			 */
 			onMessage: function (obj) {
+				this.checkChannel(obj.channel, "onMessage");
+
 				obj.channel = obj.channel || this.defaultMessageChannel;
 				obj.context = obj.context || this;
 				nerve.on(obj);
 			},
+			/**
+			 * Removes messge listener from channel.
+			 * {channel: "my-channel"}
+			 * {channel: "my-channel", route: "my-route"}
+			 * {channel: "my-channel", route: "my-route", scope: myScope}
+			 * @param {type} obj
+			 * @returns {undefined}
+			 */
 			offMessage: function (obj) {
+				this.checkChannel(obj.channel);
+
 				obj.channel = obj.channel || this.defaultMessageChannel;
 				obj.context = obj.context || this;
 				nerve.off(obj);
 			},
+			/**
+			 * Sends message on channel.
+			 * {channel: "my-channel", {myObjMessage: "message"}},
+			 * {channel: "my-channel", route: "my-route", {myObjMessage: "message"}}
+			 * 
+			 * @param {type} obj
+			 * @returns {undefined}
+			 */
 			sendMessage: function (obj) {
+				//this.checkChannel(obj.channel);
+
 				obj.channel = obj.channel || this.defaultMessageChannel;
 				obj.context = obj.context || this;
 				nerve.send(obj);
-			}
+			},
+			/**
+			 * Checks if event exists in event "map".
+			 * 
+			 * @param {type} eventsString
+			 * @param {type} type
+			 * @returns {undefined}
+			 */
+			checkEvent: function (eventsString, type) {
+				if (this.disableEventNameChecking) {
+					return;
+				}
+				var events = this.stringToArray(eventsString);
+				for (var i = 0; i < events.length; ++i) {
+					var event = events[i];
+					if (!event) {
+						throw "You can't register " + event + ".";
+					}
+					if (!event[event]) {
+						if (type === "on" || type === "once") {
+							throw "Please register the event name \"" + event + "\" in \"polyflex/_globals/globals.html\" before using it.";
+						}
 
+						throw "The event with name: " + event + " does not exists.";
+					}
+				}
+			},
+			/**
+			 * Checks if channel exists in channel "map".
+			 * 
+			 * @param {type} channel
+			 * @param {type} type
+			 * @returns {undefined}
+			 */
+			checkChannel: function (channel, type) {
+				if (this.disableMessageChannelChecking) {
+					return;
+				}
+				if (channel && channel !== this.defaultMessageChannel && !this.channels[channel]) {
+					if (type === "onMessage") {
+						throw "Please register channel name \"" + channel + "\" in \"polyflex/_globals/globals.html\" before using it.";
+					}
+
+					throw "The channel with name: " + channel + " does not exist.";
+				}
+			}
 		};
 
 	})(window);

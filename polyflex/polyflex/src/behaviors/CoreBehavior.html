@@ -2,11 +2,8 @@
 	(function (window) {
 
 		"use strict";
-
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
-
-
 		/**
 		 * Behavior containing core functionality.
 		 * 
@@ -14,30 +11,33 @@
 		 */
 		behaviors.CoreBehavior = {
 			customElements: [],
+			isDetached: null,
 			properties: {
 				debug: {
 					type: Boolean,
 					value: false
-				},
-				isRemoved: {
-					type: Boolean
 				}
 			},
 			ready: function () {
 				this.dispatchEvent(new CustomEvent("child-ready", {bubbles: true, cancelable: true}));
 			},
 			attached: function () {
-				this.isRemoved = false;
+				this.isDetached = false;
 				this.dispatchEvent(new CustomEvent("child-added", {bubbles: true, cancelable: true}));
 				this.customElements.push(this);
 			},
 			detached: function () {
-				this.isRemoved = true;
+				this.isDetached = true;
 				this.customElements.splice(this.customElements.indexOf(this), 1);
 				if (this._lightParent) {
 					this._lightParent.dispatchEvent(new CustomEvent("child-removed", {bubbles: true, cancelable: true}));
 				}
 			},
+			/**
+			 * Returns true/false if component is in debug mode.
+			 * 
+			 * @returns {Boolean}
+			 */
 			get isInDebugMode() {
 				return document.getElementsByTagName("html")[0].className.indexOf("debug") > -1;
 			},
@@ -47,6 +47,7 @@
 			 * @returns {undefined}
 			 */
 			created: function () {
+				this.isDetached = true;
 				window.addEventListener('WebComponentsReady', this.webComponentsReady);
 			},
 			/**
@@ -64,6 +65,57 @@
 			 */
 			get body() {
 				return document.querySelector("body");
+			},
+			/**
+			 * Returns if this element is displayed in th DOM or not.
+			 * 
+			 * @returns {Boolean}
+			 */
+			get isDisplayed() {
+				var elm = this.arguments[0] || this;
+				while (elm.tagName !== 'BODY') {
+					if (elm.style.display === "none") {
+						return false;
+					}
+					elm = elm.parentNode;
+				}
+				return true;
+			},
+			get polyflex(){
+				return window.polyflex;
+			},
+			get channels() {
+				return this.polyflex.channels;
+			},
+			get events() {
+				return this.polyflex.events;
+			},
+			get urls(){
+				return this.polyflex.urls;
+			},
+			/**
+			 * Looks up for an object based on passed string path.
+			 * Path example: "foo.bar.baz".
+			 * 
+			 * @param {String} path
+			 * @param {Object} object - Object from where to start lookup. 
+			 * If no object is specified, than lookup starts from window object.
+			 * 
+			 * @returns {Object}
+			 */
+			pathToObject: function (path, object) {
+				// if object is not defined, than we start 
+				// to bild a path from window object;
+				var obj = object || window;
+				var stack = path.split('.');
+				while (stack.length > 0) {
+					obj = obj[stack.shift()];
+					if (!obj) {
+						return null;
+					}
+				}
+
+				return obj;
 			},
 			/**
 			 * Logs messages if debug is set to true.
@@ -104,7 +156,6 @@
 				e.preventDefault();
 			}
 		};
-
 	})(window);
 
 </script>

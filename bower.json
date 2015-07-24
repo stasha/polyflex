@@ -14,7 +14,8 @@
     "page": "stasha/page.js#~1.6.4",
     "emitter": "component/emitter#~1.2.0",
     "bean": "~1.0.14",
-    "nerve": "artemdemo/nerve"
+    "nerve": "artemdemo/nerve",
+    "extend.js": "borayazilim/extend.js"
   },
   "devDependencies": {}
 }

@@ -4,45 +4,44 @@
 		<title>TODO supply a title</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		
+
 		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
+		<link rel="import" href="../src/singletons/polyflex-base.html" />
+		<link rel="import" href="../src/singletons/polyflex-globals-override.html" />
 		
-		<link rel="import" href="../src/singletons/url-router.html" />
-		<link rel="import" href="../src/singletons/ajax-base.html" />
+		<polyflex-globals-override></polyflex-globals-override>
 		
-		<link rel="import" href="../src/view-stack.html" />
-		<link rel="import" href="../src/ajax-container.html" />
-		<link rel="import" href="../src/fx/fx-fade.html" />
-		
+		<polyflex-base 
+			router-root="/polyflex/polyflex/examples"
+			ajax-root="/polyflex/polyflex/examples"></polyflex-base>
 
-	<url-router base="/polyflex/polyflex/examples"></url-router>
-	<ajax-base ajax-base="/polyflex/polyflex/examples"></ajax-base>
-	
-	<fx-fade id="fadeIn" to="1" speed="0.5" delay="1"></fx-fade>
-	<fx-fade id="fadeOut" to="0" speed="0.5"></fx-fade>
-	
+		<fx-fade id="fadeIn" to="1" speed="0.5" delay="1"></fx-fade>
+		<fx-fade id="fadeOut" to="0" speed="0.5"></fx-fade>
 
-</head>
-<body>
 
-	<a onclick="vs.selectedIndex = 0">1</a>
-	<a onclick="vs.selectedIndex = 1">2</a>
-	<a href="/polyflex/polyflex/examples/third-page">3</a>
-	<a href="/polyflex/polyflex/examples/fourth-page/a">4</a>
-	<a href="/polyflex/polyflex/examples/fourth-page/b?a=1&b=2#c=3">5</a>
-	<a href="/polyflex/polyflex/examples/fourth-page/c">6</a>
-	<a href="/polyflex/polyflex/examples/fifth-page">7</a>
-<view-stack name="view-stack-element" debug selected-index="1" resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
-	<ajax-container name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
-	<ajax-container name="dva">2</ajax-container>
-	<ajax-container name="tri" url="/third-page">3</ajax-container>
-	<ajax-container name="cetiri" url="/fourth-page/:id">4</ajax-container>
-	<ajax-container name="pet" url="/fourth-page/:id">5</ajax-container>
-	<ajax-container name="sest" url="/fourth-page/:id">6</ajax-container>
-	<ajax-container name="sedam" url="/fifth-page">7</ajax-container>
-</view-stack>
+	</head>
+	<body>
 
-	<ajax-container name="osam" url="/fourth-page/:id">8</ajax-container>
+
+
+		<a onclick="vs.selectedIndex = 0">1</a>
+		<a onclick="vs.selectedIndex = 1">2</a>
+		<a href="/polyflex/polyflex/examples/third-page">3</a>
+		<a href="/polyflex/polyflex/examples/fourth-page/a">4</a>
+		<a href="/polyflex/polyflex/examples/fourth-page/b?a=1&b=2#c=3">5</a>
+		<a href="/polyflex/polyflex/examples/fourth-page/c">6</a>
+		<a href="/polyflex/polyflex/examples/fifth-page">7</a>
+	<view-stack name="view-stack-element" debug selected-index="1" resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
+		<ajax-container name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
+		<ajax-container name="dva">2</ajax-container>
+		<ajax-container name="tri" url="/third-page">3</ajax-container>
+		<ajax-container name="cetiri" url="/fourth-page/:id">4</ajax-container>
+		<ajax-container name="pet" url="/fourth-page/:id">5</ajax-container>
+		<ajax-container name="sest" url="/fourth-page/:id">6</ajax-container>
+		<ajax-container name="sedam" url="/fifth-page">7</ajax-container>
+	</view-stack>
+
+<ajax-container name="osam" url="/fourth-page/:id">8</ajax-container>
 
 </body>
 </html>

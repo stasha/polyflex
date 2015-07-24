@@ -1,4 +1,3 @@
-<link rel="import" href="../_imports/tweenmax.html" />
 <link rel="import" href="CoreBehavior.html" />
 
 <script>
@@ -63,7 +62,7 @@
 				this.tween && this.tween.kill();
 			},
 			clone: function () {
-				return $.extend({}, this);
+				return extend(true, this);
 			}
 		};
 

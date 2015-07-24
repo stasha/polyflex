@@ -1,6 +1,5 @@
 <link rel="import" href="CoreBehavior.html" />
 <link rel="import" href="EventBehavior.html" />
-<link rel="import" href="../_imports/page.js.html" />
 
 <script>
 
@@ -16,8 +15,6 @@
 		 */
 		behaviors.RoutingBehavior = {
 			_router: null,
-			routes: null,
-			route: null,
 			behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior],
 			properties: {
 				url: {
@@ -72,6 +69,16 @@
 				}
 			},
 			/**
+			 * Invoked when this element is removed from DOM.
+			 * It cleans up registered routes.
+			 * 
+			 * @returns {undefined}
+			 */
+			detached: function () {
+				this.removeAllroutes();
+				this._router = null;
+			},
+			/**
 			 * Performs matching between this element url and 
 			 * current browser url. If url matches than page.Context is 
 			 * returned otherwis false is returned.
@@ -89,24 +96,7 @@
 					}
 				}
 				return false;
-			},
-			/**
-			 * Invoked when this element is removed from DOM.
-			 * It cleans up registered routes.
-			 * 
-			 * @returns {undefined}
-			 */
-			detached: function () {
-				this.removeAllroutes();
-				this._router = null;
-			},
-			onRoute: function(element, route, callback){
-				this.on(element, "route:" + route, callback);
-			},
-			offRoute: function(element, route, callback){
-				this.off(element, "route:" + route, callback);
 			}
-			
 		};
 
 	})(window, window.page);

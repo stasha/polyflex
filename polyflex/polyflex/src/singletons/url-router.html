@@ -1,19 +1,18 @@
-<link rel="import" href="../_imports/polymer.html" />
-<link rel="import" href="../_imports/page.js.html" />
-
 <link rel="import" href="../behaviors/CoreBehavior.html" />
 <link rel="import" href="../behaviors/EventBehavior.html" />
 
 <dom-module id="url-router">
 
 	<script>
-		(function (window, page) {
+		(function (window, Channel) {
 
 			"use strict";
 
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
-
+			
+			var page = window.page;
+			
 
 			Polymer({
 				is: "url-router",
@@ -30,9 +29,9 @@
 						this.log("Setting base url to: " + newValue);
 					}
 				},
-				created: function(){
+				created: function () {
 					this.onMessage({
-						channel: "page-route",
+						channel: Channel.ROUTE_ENTER,
 						route: "*",
 						callback: function (context) {
 							console.log("no route found");
@@ -48,19 +47,52 @@
 
 					var self = this;
 
+					// Route can be registered with the router only once.
+					// Once the route is registered, there is no back, 
+					// at least for now.
+					for (var i = 0; i < page.callbacks.length; ++i) {
+						var routeObj = page.callbacks[i];
+						if (routeObj.path === route) {
+							return;
+						}
+					}
+
+					/**
+					 * Registering route with url router.
+					 * 
+					 * @param {type} ctx
+					 * @returns {undefined}
+					 */
 					page(route, function (ctx) {
-						// sends message that route has changed
+						// sends message that route is changed/entered.
 						self.sendMessage({
-							channel: "page-route",
+							channel: Channel.ROUTE_ENTER,
 							route: route,
 							context: {context: ctx}
 						});
 					});
 
+					/**
+					 * Registering route with url router.
+					 * 
+					 * @param {type} ctx
+					 * @returns {undefined}
+					 */
+//					page.exit(route, function (ctx) {
+//						// Send message that route is changed/exited.
+//						// Note that "route-exited" message is sent before
+//						// "route-entered" message.
+//						self.sendMessage({
+//							channel: Channel.ROUTE_EXIT,
+//							route: route,
+//							context: {context: ctx}
+//						});
+//					});
+
 					page.start();
 				}
 			});
 
-		})(window, window.page);
+		})(window, window.polyflex.Channel);
 	</script>
 </dom-module>

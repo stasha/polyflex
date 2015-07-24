@@ -1,6 +1,3 @@
-<link rel="import" href="_imports/polymer.html" />
-<link rel="import" href="_imports/jbone.html" />
-
 <link rel="import" href="behaviors/CoreBehavior.html" />
 <link rel="import" href="behaviors/EventBehavior.html" />
 <link rel="import" href="behaviors/RoutingBehavior.html" />
@@ -30,7 +27,7 @@
 
 	<script>
 
-		(function (window) {
+		(function (window, Channel) {
 
 			"use strict";
 
@@ -98,7 +95,7 @@
 						if (i !== this.selectedIndex) {
 							item.style.display = "none";
 							if (this._hideEffect) {
-								var he = $.extend({}, this._hideEffect);
+								var he = extend(true, this._hideEffect);
 								he.delay = 0;
 								he.speed = 0;
 								he.start(item);
@@ -121,7 +118,7 @@
 						item.preventInvokingRequestOnUrlChanged = true;
 						var self = this;
 						this.onMessage({
-							channel: "page-route",
+							channel: Channel.ROUTE_ENTER,
 							route: url,
 							callback: function (context) {
 								self.urlChanged(context, item);
@@ -298,6 +295,6 @@
 
 			});
 
-		})(window);
+		})(window, window.polyflex.Channel);
 	</script>
 </dom-module>
