@@ -9,6 +9,7 @@
 
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+		var Channel = polyflex.Channel;
 
 		/**
 		 * 
@@ -17,9 +18,13 @@
 			_router: null,
 			behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior],
 			properties: {
-				url: {
+				route: {
 					type: String,
-					observer: "urlPatternChanged"
+					observer: "routePatternChanged"
+				},
+				exitRoute: {
+					type: String,
+					observer: "exitRoutePatternChanged"
 				}
 			},
 			/**
@@ -29,9 +34,33 @@
 			 * @param {type} newValue
 			 * @returns {undefined}
 			 */
-			urlPatternChanged: function (newValue) {
+			routePatternChanged: function (newValue) {
 				if (newValue) {
-					this.router.addRoute(newValue, this.urlChanged, this);
+					this.onMessage({
+						channel: Channel.ROUTE_ENTER,
+						route: newValue,
+						callback: this.enteringRoute
+					});
+
+					this.router.addRoute(newValue);
+				}
+			},
+			/**
+			 * Url pattern change observing function.
+			 * This function is invoked every time url property changes.
+			 * 
+			 * @param {type} newValue
+			 * @returns {undefined}
+			 */
+			exitRoutePatternChanged: function (newValue) {
+				if (newValue) {
+					this.onMessage({
+						channel: Channel.ROUTE_EXIT,
+						route: newValue,
+						callback: this.exitingRoute
+					});
+
+					this.router.addRoute(newValue);
 				}
 			},
 			/**
@@ -40,8 +69,17 @@
 			 * @param {type} context
 			 * @returns {undefined}
 			 */
-			urlChanged: function (context) {
-				//console.log("urlChanged method not implemented")
+			enteringRoute: function (context) {
+				//console.log("enteringRoute method not implemented")
+			},
+			/**
+			 * Invoked by url router when url changes.
+			 * 
+			 * @param {type} context
+			 * @returns {undefined}
+			 */
+			exitingRoute: function (context) {
+				//console.log("exitingRoute method not implemented")
 			},
 			/**
 			 * Returns url router element.
@@ -55,17 +93,13 @@
 				return this._router;
 			},
 			/**
-			 * When this component is attached to DOM, urlPattenrChanged 
-			 * function in url router is invoked. If url matches to url this 
-			 * container is listening for, than urlChanged function is invoked. 
-			 * This enshures that new attached elements are updated by correct 
-			 * data from server.
+			 * Invoked when this element is attached to DOM.
 			 * 
 			 * @returns {undefined}
 			 */
 			attached: function () {
 				if (this.isUrlMatching()) {
-					this.urlChanged(page.current, null);
+					this.enteringRoute(page.current, null);
 				}
 			},
 			/**
@@ -79,7 +113,7 @@
 				this._router = null;
 			},
 			/**
-			 * Performs matching between this element url and 
+			 * Performs matching between this element route and 
 			 * current browser url. If url matches than page.Context is 
 			 * returned otherwis false is returned.
 			 * 
@@ -87,11 +121,11 @@
 			 * returns page.Context | false
 			 */
 			isUrlMatching: function (urlPattern) {
-				var pattern = urlPattern || this.url;
+				var pattern = urlPattern || this.rt;
 				if (pattern) {
 					var ctx = new page.Context(page.current);
-					var route = new page.Route(pattern);
-					if (route.match(ctx.path, ctx.params)) {
+					var rt = new page.Route(pattern);
+					if (rt.match(ctx.path, ctx.params)) {
 						return ctx;
 					}
 				}

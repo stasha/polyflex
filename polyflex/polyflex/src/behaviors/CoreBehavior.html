@@ -4,14 +4,16 @@
 		"use strict";
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+		var Event = polyflex.Event;
 		/**
 		 * Behavior containing core functionality.
 		 * 
 		 * @type type
 		 */
 		behaviors.CoreBehavior = {
-			customElements: [],
+			customElements: [behaviors.EventBehavior],
 			isDetached: null,
+			webComponentsReady: null,
 			properties: {
 				debug: {
 					type: Boolean,
@@ -48,15 +50,20 @@
 			 */
 			created: function () {
 				this.isDetached = true;
-				window.addEventListener('WebComponentsReady', this.webComponentsReady);
+				try{
+					this.one(window, Event.WEB_COMPONENTS_READY, this.componentsReady);
+				} catch (e){
+					console.warn("You should implement EventBehavior behavior in this component.");
+				}
 			},
 			/**
 			 * Invoked when all webcomponents are ready.
 			 * 
 			 * @returns {undefined}
 			 */
-			webComponentsReady: function () {
-				window.removeEventListener('WebComponentsReady', this.webComponentsReady);
+			componentsReady: function () {
+				this.webComponentsReady = true;
+				console.log("webcomponents ready");
 			},
 			/**
 			 * Returns body element
@@ -81,7 +88,7 @@
 				}
 				return true;
 			},
-			get polyflex(){
+			get polyflex() {
 				return window.polyflex;
 			},
 			get channels() {
@@ -90,7 +97,7 @@
 			get events() {
 				return this.polyflex.events;
 			},
-			get urls(){
+			get urls() {
 				return this.polyflex.urls;
 			},
 			/**

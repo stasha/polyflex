@@ -1,0 +1,30 @@
+<dom-module id="my-globals">
+
+	<script>
+		
+		(function (window) {
+
+			Polymer({
+				is: "my-globals",
+				created: function () {
+					var polyflex = window.polyflex;
+					var routes = polyflex.routes = polyflex.routes || {};
+
+					routes = extend(routes, {
+						THIRD_PAGE: {
+							route: "/third-page"
+						},
+						FOURTH_PAGE: {
+							route: "/fourth-page/:id"
+						},
+						FIFTH_PAGE: {
+							route: "/fifth-page"
+						}
+					});
+					
+					polyflex.update();
+				}
+			});
+		})(window);
+	</script>
+</dom-module>

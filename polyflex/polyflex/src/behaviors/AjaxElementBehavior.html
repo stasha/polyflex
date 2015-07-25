@@ -17,7 +17,11 @@
 		behaviors.AjaxElementBehavior = {
 			behaviors: [behaviors.CoreBehavior, behaviors.AjaxBehavior, behaviors.RoutingBehavior],
 			properties: {
-				preventInvokingRequestOnUrlChanged: {
+				invokeRequestDebounceTimeout: {
+					type: Number,
+					value: 400
+				},
+				preventInvokingRequestOnEnteringRoute: {
 					type: Boolean,
 					value: false
 				}
@@ -28,10 +32,8 @@
 			 * @param {type} context
 			 * @returns {undefined}
 			 */
-			urlChanged: function (context) {
-				// Automatic invoking of requests when url changes 
-				// can be prevented.
-				if (!this.preventInvokingRequestOnUrlChanged) {
+			enteringRoute: function (context) {
+				if (!this.preventInvokingRequestOnEnteringRoute) {
 					this.invokeRequest(context);
 				}
 			},
@@ -44,7 +46,7 @@
 			invokeRequest: function (routeContext) {
 				this.debounce(this.invokeRequestName, function () {
 					this.sendRequest(routeContext);
-				}, 400);
+				}, this.invokeRequestDebounceTimeout || 200);
 			},
 			/**
 			 * Sends request to the server.

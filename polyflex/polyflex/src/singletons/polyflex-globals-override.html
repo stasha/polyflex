@@ -5,7 +5,7 @@
 		 * This is just simple example on how to update polyflex globals.js.
 		 * 
 		 * You could create one component for registering 
-		 * new Urls, one for new Events or new Channels.
+		 * new Routes, one for new Events or new Channels.
 		 * 
 		 * All created components should apear before "polyflex-base" tag 
 		 * in html document.
@@ -23,7 +23,7 @@
 					var polyflex = window.polyflex;
 					var Event = polyflex.Event = polyflex.Event || {};
 					var Channel = polyflex.Channel = polyflex.Channel || {};
-					var Url = polyflex.Url = polyflex.Url || {};
+					var routes = polyflex.routes = polyflex.routes || {};
 
 					// Register new events
 					Event.MY_NEW_EVENT = "my-new-event";
@@ -31,36 +31,69 @@
 					// Register new channel
 					Channel.MY_NEW_CHANNEL = "my-new-channel";
 
-					// Register new url routes
-					Url.HOME = "/home";
-					Url.ABOUT = "/about";
-					Url.USER = "/user/:id";
-
-					var urlData = {
-						HOME :{
-							title: "Home Title"
+					/*
+					 * Registering new routes by extending existing routes.
+					 * 
+					 * Route properties are passed to channel listeners, 
+					 * so you can practically define everything you need in
+					 * route and than later access them in passed arguments.
+					 * 
+					 * Note that route with the name "ROUTE_NOT_FOUND: '*'" is 
+					 * already registered.
+					 */
+					routes = extend(routes, {
+						HOME: {
+							route: "/home",
+							title: "Home",
+							someOtherData: {
+								
+							}
+						},
+						ABOUT: {
+							route: "/about"
 						}
+					});
+					// or 
+					routes.CONTACT = {
+						route: "/contact"
 					};
-					
-					console.log()
-					
-
+					routes.my_route = {
+						route: "/my/custom/route"
+					};
 
 					// update after every change to globals.js;
 					polyflex.update();
 
-					print(polyflex.channels);
-					print(polyflex.events);
-					print(polyflex.urls);
+					/* 
+					 * Route object is generated based on added routes,
+					 * so don't create manually polyflex.Route object, 
+					 * otherwise you risk loosing all changes you made.
+					 * After generation, Route object contains values:
+					 * example: 
+					 * ROUTE_NAME: route;
+					 * Route.ABOUT === "/about";
+					 * Route.my_route === "/my/custom/route";
+					 * 
+					 * By using Route.ROUTE_NAME we ensure easy modification of
+					 * routes in one place, easier refactoring of route names, 
+					 * and "route safety" because every route is checked against
+					 * registered routes before they are registered in 
+					 * url router.
+					 */
+					var Route = polyflex.Route;
+					
+					console.log("---- Route ----");
+					console.log(Route.HOME); // /home
+					console.log(Route.ABOUT); // /about
+					console.log(Route.my_route);// /my/custom/route
+
+
+					polyflex.printGlobals();
+					
 					console.log("----");
+					console.log("");
 
-
-					function print(obj) {
-						console.log("----");
-						for (var i in obj) {
-							console.log(i + " : " + obj[i]);
-						}
-					}
+					
 				}
 			});
 		})(window);

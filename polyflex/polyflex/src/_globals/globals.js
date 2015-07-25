@@ -16,8 +16,38 @@
 
 	var channels = polyflex.channels = polyflex.channels || {};
 	var events = polyflex.events = polyflex.events || {};
-	var urls = polyflex.urls = polyflex.urls || {};
+	var routes = polyflex.routes = polyflex.routes || {};
+	var _routes = polyflex._routes = polyflex._routes || {};
 	var messages = polyflex.messages = polyflex.messages || {};
+
+	/**
+	 * Prints object values;
+	 * 
+	 * @param {type} obj
+	 * @param {type} spacerName
+	 * @returns {undefined}
+	 */
+	var print = polyflex.print = function (obj, spacerName) {
+		console.log("");
+		console.log("---- " + spacerName + " ----");
+		for (var i in obj) {
+			console.log(i + " : " + obj[i]);
+		}
+	};
+
+
+	/**
+	 * Prings all global objects.
+	 * 
+	 * @returns {undefined}
+	 */
+	var printGlobals = polyflex.printGlobals = function () {
+		print(channels, "channels");
+		print(events, "events");
+		print(routes, "routes");
+		print(_routes, "_routes");
+		print(Route, "Route");
+	};
 
 
 	/**
@@ -29,16 +59,28 @@
 	 * 
 	 * @param {type} obj
 	 * @param {type} names
+	 * @param {type} key
+	 * @param {type} value
 	 * @returns {undefined}
 	 */
-	var populateObject = polyflex.populateObject = function (obj, names, key) {
+	var populateObject = polyflex.populateObject = function (obj, names, key, value) {
 		if (typeof obj === "object") {
 			for (var i in names) {
 				if (names.hasOwnProperty(i)) {
 					if (!key) {
 						obj[names[i]] = names[i];
-					} else {
+					} else if (key && !value) {
 						obj[names[i][key]] = names[i];
+					} else if (key && value) {
+						if (key === "name") {
+							if(names[i][key]){
+								obj[names[i][key]] = names[i][value];
+							} else {
+								obj[i] = names[i][value];
+							}
+						} else {
+							obj[names[i][key]] = names[i][value];
+						}
 					}
 				}
 			}
@@ -92,7 +134,6 @@
 	Event.MOUSE_OUT = "mouseout";
 	Event.MOUSE_OVER = "mouseover";
 	Event.MOUSE_UP = "mouseup";
-	Event.POLYFLEX_GLOBALS_CREATED = "polyflex_globals_created";
 	Event.READY = "ready";
 	Event.RESET = "reset";
 	Event.RESIZE = "resize";
@@ -106,23 +147,36 @@
 	Event.TOUCH_MOVE = "touchmove";
 	Event.TOUCH_START = "touchstart";
 	Event.UNLOAD = "unload";
+	Event.WEB_COMPONENTS_READY = "WebComponentsReady";
 
 
 
 
 	/* Urls */
-	var Url = polyflex.Url = polyflex.Url || {};
+	var Route = polyflex.Route = polyflex.Route || {};
+
+	/* Extending existing routes if any, and registering default routes */
+	routes = extend(routes, {
+		ROUTE_NOT_FOUND: {
+			route: "*"
+		}
+	});
 
 
 
-
+	/**
+	 * Updates globals.
+	 * 
+	 * @returns {undefined}
+	 */
 	var update = polyflex.update = function () {
 		populateObject(channels, Channel);
 		populateObject(events, Event);
-		populateObject(urls, Url);
+		populateObject(Route, routes, "name", "route");
+		populateObject(_routes, routes, "route", "route");
 	};
-	
-	
+
+
 	update();
 
 })(window, Object);

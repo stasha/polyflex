@@ -8,7 +8,9 @@
 		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
 		<link rel="import" href="../src/singletons/polyflex-base.html" />
 		<link rel="import" href="../src/singletons/polyflex-globals-override.html" />
+		<link rel="import" href="my-globals.html" />
 		
+		<my-globals></my-globals>
 		<polyflex-globals-override></polyflex-globals-override>
 		
 		<polyflex-base 
@@ -28,20 +30,20 @@
 		<a onclick="vs.selectedIndex = 1">2</a>
 		<a href="/polyflex/polyflex/examples/third-page">3</a>
 		<a href="/polyflex/polyflex/examples/fourth-page/a">4</a>
-		<a href="/polyflex/polyflex/examples/fourth-page/b?a=1&b=2#c=3">5</a>
+		<a href="/polyflex/polyflex/examples/fourth-page/b?a=1&amp;b=2#c=3">5</a>
 		<a href="/polyflex/polyflex/examples/fourth-page/c">6</a>
 		<a href="/polyflex/polyflex/examples/fifth-page">7</a>
 	<view-stack name="view-stack-element" debug selected-index="1" resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
 		<ajax-container name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
 		<ajax-container name="dva">2</ajax-container>
-		<ajax-container name="tri" url="/third-page">3</ajax-container>
-		<ajax-container name="cetiri" url="/fourth-page/:id">4</ajax-container>
-		<ajax-container name="pet" url="/fourth-page/:id">5</ajax-container>
-		<ajax-container name="sest" url="/fourth-page/:id">6</ajax-container>
-		<ajax-container name="sedam" url="/fifth-page">7</ajax-container>
+		<ajax-container name="tri" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
+		<ajax-container name="cetiri" route="Route.FOURTH_PAGE">4</ajax-container>
+		<ajax-container name="pet" route="Route.FOURTH_PAGE">5</ajax-container>
+		<ajax-container name="sest" route="Route.FOURTH_PAGE">6</ajax-container>
+		<ajax-container name="sedam" route="Route.FIFTH_PAGE">7</ajax-container>
 	</view-stack>
 
-<ajax-container name="osam" url="/fourth-page/:id">8</ajax-container>
+<ajax-container name="osam" url="Route.FOURTH_PAGE">8</ajax-container>
 
 </body>
 </html>

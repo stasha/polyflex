@@ -10,9 +10,12 @@
 
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
-			
+			var Route = polyflex.Route;
+			var routes = polyflex.routes;
+			var _routes = polyflex._routes;
+
 			var page = window.page;
-			
+
 
 			Polymer({
 				is: "url-router",
@@ -32,18 +35,32 @@
 				created: function () {
 					this.onMessage({
 						channel: Channel.ROUTE_ENTER,
-						route: "*",
+						route: Route.ROUTE_NOT_FOUND,
 						callback: function (context) {
 							console.log("no route found");
 						}
 					});
-					this.addRoute("*");
+					this.addRoute(Route.ROUTE_NOT_FOUND);
 				},
 				detached: function () {
 					page.stop();
 					this.log("Router stopped.");
 				},
 				addRoute: function (route) {
+					if(!route){
+						throw "You cant add route: " + route;
+					}
+					
+					var rt = route;
+					if(rt && rt.indexOf("Route") > -1){
+						rt = Route[rt.replace("Route.", "")];
+					} else {
+						rt = Route[rt] || _routes[route];
+					}
+					
+					if(!rt){
+						throw "Please register route \"" + route + "\" before using it.";
+					}
 
 					var self = this;
 
@@ -52,7 +69,7 @@
 					// at least for now.
 					for (var i = 0; i < page.callbacks.length; ++i) {
 						var routeObj = page.callbacks[i];
-						if (routeObj.path === route) {
+						if (routeObj.path === rt) {
 							return;
 						}
 					}
@@ -63,7 +80,7 @@
 					 * @param {type} ctx
 					 * @returns {undefined}
 					 */
-					page(route, function (ctx) {
+					page(rt, function (ctx) {
 						// sends message that route is changed/entered.
 						self.sendMessage({
 							channel: Channel.ROUTE_ENTER,
@@ -78,8 +95,8 @@
 					 * @param {type} ctx
 					 * @returns {undefined}
 					 */
-//					page.exit(route, function (ctx) {
-//						// Send message that route is changed/exited.
+//					page.exit(rt, function (ctx) {
+//						// Send message that route is changed/exiting.
 //						// Note that "route-exited" message is sent before
 //						// "route-entered" message.
 //						self.sendMessage({
@@ -88,7 +105,12 @@
 //							context: {context: ctx}
 //						});
 //					});
-
+					
+					page.start({dispatch: false});
+					
+				},
+				componentsReady: function(){
+					this.webComponentsReady = true;
 					page.start();
 				}
 			});
