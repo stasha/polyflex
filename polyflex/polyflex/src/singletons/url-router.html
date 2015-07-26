@@ -1,5 +1,6 @@
 <link rel="import" href="../behaviors/CoreBehavior.html" />
 <link rel="import" href="../behaviors/EventBehavior.html" />
+<link rel="import" href="../behaviors/RoutingBehavior.html" />
 
 <dom-module id="url-router">
 
@@ -11,6 +12,7 @@
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 			var Route = polyflex.Route;
+			var Event = polyflex.Event;
 			var routes = polyflex.routes;
 			var _routes = polyflex._routes;
 
@@ -19,7 +21,11 @@
 
 			Polymer({
 				is: "url-router",
-				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior],
+				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior, behaviors.RoutingBehavior],
+				lastRoute: null,
+				lastRoutePattern: null,
+				lastRouteContext: null,
+				bodyClicked: false,
 				properties: {
 					base: {
 						type: String,
@@ -41,24 +47,26 @@
 						}
 					});
 					this.addRoute(Route.ROUTE_NOT_FOUND);
+					var self = this;
+					this.on(document.querySelector("body"), "click", function(e){
+						self.bodyClicked = true;
+						self.debounce("CLEAR-BODY-CLICK", function(){
+							self.bodyClicked = false;
+						}, 10);
+					});
 				},
 				detached: function () {
 					page.stop();
 					this.log("Router stopped.");
 				},
 				addRoute: function (route) {
-					if(!route){
+					if (!route) {
 						throw "You cant add route: " + route;
 					}
-					
-					var rt = route;
-					if(rt && rt.indexOf("Route") > -1){
-						rt = Route[rt.replace("Route.", "")];
-					} else {
-						rt = Route[rt] || _routes[route];
-					}
-					
-					if(!rt){
+
+					var rt = Route[route.replace("Route.", "")] || Route[route] || _routes[route];
+
+					if (!rt) {
 						throw "Please register route \"" + route + "\" before using it.";
 					}
 
@@ -81,6 +89,25 @@
 					 * @returns {undefined}
 					 */
 					page(rt, function (ctx) {
+						if (self.lastRoute && self.isUrlMatching(self.lastRoutePattern, self.lastRouteContext.path)) {
+							// Send message that route is changed/exited.
+							// Note that "route-exited" message is sent before
+							// "route-entered" message.
+							
+							self.sendMessage({
+								channel: Channel.ROUTE_EXIT,
+								route: self.lastRoute,
+								context: {context: self.lastRouteContext}
+							});
+						}
+
+						self.lastRoute = route;
+						self.lastRoutePattern = rt;
+						ctx.data = routes[route.replace("Route.", "")];
+						self.lastRouteContext = ctx;
+						
+						document.querySelector("title").innerHTML = ctx.data.title || "";
+						
 						// sends message that route is changed/entered.
 						self.sendMessage({
 							channel: Channel.ROUTE_ENTER,
@@ -105,11 +132,11 @@
 //							context: {context: ctx}
 //						});
 //					});
-					
+
 					page.start({dispatch: false});
-					
+
 				},
-				componentsReady: function(){
+				componentsReady: function () {
 					this.webComponentsReady = true;
 					page.start();
 				}

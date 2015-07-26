@@ -118,12 +118,13 @@
 			 * returned otherwis false is returned.
 			 * 
 			 * @param {type} urlPattern
+			 * @param {type} urlPath
 			 * returns page.Context | false
 			 */
-			isUrlMatching: function (urlPattern) {
+			isUrlMatching: function (urlPattern, urlPath) {
 				var pattern = urlPattern || this.rt;
 				if (pattern) {
-					var ctx = new page.Context(page.current);
+					var ctx = new page.Context(urlPath || page.current);
 					var rt = new page.Route(pattern);
 					if (rt.match(ctx.path, ctx.params)) {
 						return ctx;
