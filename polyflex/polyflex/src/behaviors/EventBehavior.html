@@ -13,8 +13,11 @@
 		var nerve = window.nerve;
 
 		behaviors.EventBehavior = {
+			// global application channel
 			defaultMessageChannel: "channel:" + new Date().getTime(),
 			behaviors: [behaviors.CoreBehavior],
+			eventRegister: null,
+			messageEventRegister: null,
 			properties: {
 				autoRemoveEventsListeners: {
 					type: Boolean,
@@ -31,15 +34,52 @@
 				disableMessageChannelChecking: {
 					type: Boolean,
 					value: false
+				},
+				autoRemoveEventListenersTimeout: {
+					type: Number,
+					value: 100
+				},
+				autoRemoveMessageListenersTimeout: {
+					type: Number,
+					value: 100
 				}
 			},
+			created: function () {
+				this.eventId = "eventid:" + new Date().getTime() + Math.random();
+			},
+			attached: function () {
+				// Cancels removing listeners from this element.
+				this.cancelDebouncer("AUTO-REMOVE-EVENTS");
+				this.cancelDebouncer("AUTO-REMOVE-MESSAGE-EVENTS");
+			},
 			detached: function () {
+				/**
+				 * Removes all registered events and message events through this
+				 * element when this element is removed from DOM. 
+				 * 
+				 * Note that if this element is again attached to DOM before
+				 * that remove timeout functions are called, than all listeners
+				 * are preserved as they were before. This is just to prevent from
+				 * loosing listeners if element was just detached and than again
+				 * attached in new element in the DOM.
+				 */
 				if (this.autoRemoveEventsListeners) {
-					this.log("Auto removing event listeners.");
-					bean.off(this);
+					this.debounce("AUTO-REMOVE-EVENTS", function () {
+						this.log("Auto removing event listeners.");
+						// unregisters all events registered on this instance
+						bean.off(this);
+						// unregisters all events registered on other elements
+						this.removeAllNonContextEvents();
+					}, this.autoRemoveEventListenersTimeout);
 				}
 				if (this.autoRemoveMessageListeners) {
-					this.log("Auto removing message listeners");
+					this.debounce("AUTO-REMOVE-MESSAGE-EVENTS", function () {
+						this.log("Auto removing message listeners");
+						// unregisters all events registered on this instance
+						nerve.off({scope: this});
+						// unregisters all events registered on message channels
+						this.removeAllNonContextMessageEvents();
+					}, this.autoRemoveMessageListenersTimeout);
 				}
 			},
 			/**
@@ -53,7 +93,22 @@
 			 */
 			on: function (element, events, selector, fn) {
 				this.checkEvent(events, "on");
-				bean.on(element, events, selector, fn);
+				var self = this;
+				if (typeof selector === "function" && !fn) {
+					bean.on(element, events, function (e) {
+						selector.call(self, this, e);
+					});
+					fn = selector;
+				} else {
+					bean.on(element, events, selector, function (e) {
+						fn.call(self, this, e);
+					});
+				}
+				if (element !== this) {
+					
+					this.eventRegister = this.eventRegister || [];
+					this.eventRegister.push({element: element, events: events, callback: fn});
+				}
 			},
 			/**
 			 * Registers event listener on element or object that is
@@ -80,20 +135,22 @@
 			off: function (element, events, fn) {
 				this.checkEvent(events);
 				bean.off(element, events, fn);
+				this.removeGeneralEvent(this.eventRegister, {element: element, events: events, callback: fn});
 			},
-			/**
-			 * Clones event listener to new element/object from specified 
-			 * element/object.
-			 * 
-			 * @param {type} element
-			 * @param {type} from
-			 * @param {type} type
-			 * @returns {undefined}
-			 */
-			clone: function (element, from, type) {
-				this.checkEvent(type);
-				bean.clone(element, from, type);
-			},
+//			/**
+//			 * Clones event listener to new element/object from specified 
+//			 * element/object.
+//			 * 
+//			 * @param {type} element
+//			 * @param {type} from
+//			 * @param {type} type
+//			 * @returns {undefined}
+//			 */
+//			clone: function (element, from, type) {
+//				this.checkEvent(type);
+//				bean.clone(element, from, type);
+//				this.registerNonContextEvent(element, events, fn);
+//			},
 			/**
 			 * Triggers/dispatches event.
 			 * 
@@ -120,6 +177,10 @@
 
 				obj.channel = obj.channel || this.defaultMessageChannel;
 				obj.scope = obj.scope || this;
+				if (obj.scope !== this) {
+					this.messageEventRegister = this.messageEventRegister || [];
+					this.messageEventRegister.push(obj);
+				}
 				nerve.on(obj);
 			},
 			/**
@@ -136,6 +197,7 @@
 				obj.channel = obj.channel || this.defaultMessageChannel;
 				obj.scope = obj.scope || this;
 				nerve.off(obj);
+				this.removeGeneralEvent(this.messageEventRegister, obj, "message");
 			},
 			/**
 			 * Sends message on channel.
@@ -196,6 +258,48 @@
 
 					throw "The channel with name: " + channel + " does not exist.";
 				}
+			},
+			removeAllNonContextEvents: function () {
+				this.removeGeneralEventAll(this.eventRegister);
+			},
+			removeAllNonContextMessageEvents: function () {
+				this.removeGeneralEventAll(this.messageEventRegister, "messages");
+			},
+			removeGeneralEvent: function (eventArray, obj, funcName) {
+				for (var i = 0; i < eventArray.length; ++i) {
+					var evtObj = eventArray[i];
+					if (funcName === "messages") {
+						var ch = obj.channel;
+						var rt = obj.route;
+						var sc = obj.scope;
+						if (ch === obj.channel && rt === obj.route && sc === obj.scope) {
+							nerve.off(obj);
+							eventArray.splice(i, 1);
+							i--;
+						}
+					} else {
+						var el = evtObj.element;
+						var ev = evtObj.events;
+						var cb = evtObj.callback;
+						if (el === obj.element && ev === obj.events && cb === obj.callback) {
+							bean.off(el, ev, cb);
+							eventArray.splice(i, 1);
+							i--;
+						}
+					}
+				}
+			},
+			removeGeneralEventAll: function (eventArray, funcName) {
+				for (var i = 0; i < eventArray.length; ++i) {
+					var obj = eventArray[i];
+					if (funcName === "messages") {
+						nerve.off(obj);
+					} else {
+						bean.off(obj.element, obj.events, obj.callback);
+					}
+				}
+
+				eventArray = [];
 			}
 		};
 

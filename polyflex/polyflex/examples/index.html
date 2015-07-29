@@ -9,8 +9,41 @@ and open the template in the editor.
 		<title>TODO supply a title</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<script src="../../bean/bean.js"></script>
+		<script src="../../nerve/nerve.js"></script>
 	</head>
 	<body>
-		<div>TODO write content</div>
+		<div id="jedan">TODO write content</div>
+
+		<script>
+			bean.on(jedan, "click", function () {
+				console.log("clicked");
+			});
+
+			bean.off(jedan);
+
+			nerve.on({
+				channel: "jedan",
+				callback: fun,
+				scope: this
+			});
+
+			function fun(ctx) {
+				console.log(ctx);
+
+			}
+
+			nerve.off({
+				channel: "jedan",
+				scope: this
+			});
+
+			nerve.send({
+				channel: "jedan",
+				context: {obj: "my obj"}
+			});
+
+		</script>
+
 	</body>
 </html>
