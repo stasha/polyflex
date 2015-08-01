@@ -9,41 +9,73 @@
 		<link rel="import" href="../src/singletons/polyflex-base.html" />
 		<link rel="import" href="../src/singletons/polyflex-globals-override.html" />
 		<link rel="import" href="my-globals.html" />
+
+	<my-globals></my-globals>
+	<polyflex-globals-override></polyflex-globals-override>
+
+	<polyflex-base 
+		router-root="/polyflex/polyflex/examples"
+		ajax-root="/polyflex/polyflex/examples"></polyflex-base>
+
+	<fx-fade id="fadeIn" to="1" speed="0.5" delay="1"></fx-fade>
+	<fx-fade id="fadeOut" to="0" speed="0.5"></fx-fade>
+
+	<style>
 		
-		<my-globals></my-globals>
-		<polyflex-globals-override></polyflex-globals-override>
+		html, body{
+			overflow: hidden;
+			width: 100vw;
+			height: 100vh;
+			margin: 0;
+		}
 		
-		<polyflex-base 
-			router-root="/polyflex/polyflex/examples"
-			ajax-root="/polyflex/polyflex/examples"></polyflex-base>
+		.body {
+			overflow: auto;
+			width: 100vw;
+			height: 100vh;
+			position: relative;
+		}
+		
+		.nav {
+			position: fixed;
+		}
 
-		<fx-fade id="fadeIn" to="1" speed="0.5" delay="1"></fx-fade>
-		<fx-fade id="fadeOut" to="0" speed="0.5"></fx-fade>
+		view-stack {
+			position: absolute;
+			top: 50px;
+		}
+		ajax-container {
+			width: 2000px;
+			height: 2000px;
+		}
+		
+	
+		
+	</style>
+</head>
+<body>
+	<div class="body">
+		<div class="nav">
+			<a onclick="vs.selectedIndex = 0">1</a>
+			<a onclick="vs.selectedIndex = 1">2</a>
+			<a tabindex="0" href="/polyflex/polyflex/examples/third-page">3</a>
+			<a tabindex="0" href="/polyflex/polyflex/examples/fourth-page/a">4</a>
+			<a tabindex="0" href="/polyflex/polyflex/examples/fourth-page/b?a=1&amp;b=2#c=3">5</a>
+			<a tabindex="0" href="/polyflex/polyflex/examples/fourth-page/c">6</a>
+			<a tabindex="0" href="/polyflex/polyflex/examples/fifth-page">7</a>
+		</div>
+		<view-stack name="view-stack-element" debug selected-index="1" resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
+			<ajax-container name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
+			<ajax-container name="dva">2</ajax-container>
+			<ajax-container name="tri" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
+			<ajax-container name="cetiri" route="Route.FOURTH_PAGE">4</ajax-container>
+			<ajax-container name="pet" route="Route.FOURTH_PAGE">5</ajax-container>
+			<ajax-container name="sest" route="Route.FOURTH_PAGE">6</ajax-container>
+			<ajax-container name="sedam" route="Route.FIFTH_PAGE">7</ajax-container>
+		</view-stack>
 
+		<ajax-container name="osam" url="Route.FOURTH_PAGE">8</ajax-container>
 
-	</head>
-	<body>
-
-
-
-		<a onclick="vs.selectedIndex = 0">1</a>
-		<a onclick="vs.selectedIndex = 1">2</a>
-		<a tabindex="0" href="/polyflex/polyflex/examples/third-page">3</a>
-		<a tabindex="0" href="/polyflex/polyflex/examples/fourth-page/a">4</a>
-		<a tabindex="0" href="/polyflex/polyflex/examples/fourth-page/b?a=1&amp;b=2#c=3">5</a>
-		<a tabindex="0" href="/polyflex/polyflex/examples/fourth-page/c">6</a>
-		<a tabindex="0" href="/polyflex/polyflex/examples/fifth-page">7</a>
-	<view-stack name="view-stack-element" debug selected-index="1" resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
-		<ajax-container name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
-		<ajax-container name="dva">2</ajax-container>
-		<ajax-container name="tri" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
-		<ajax-container name="cetiri" route="Route.FOURTH_PAGE">4</ajax-container>
-		<ajax-container name="pet" route="Route.FOURTH_PAGE">5</ajax-container>
-		<ajax-container name="sest" route="Route.FOURTH_PAGE">6</ajax-container>
-		<ajax-container name="sedam" route="Route.FIFTH_PAGE">7</ajax-container>
-	</view-stack>
-
-<ajax-container name="osam" url="Route.FOURTH_PAGE">8</ajax-container>
-
+	</div>
 </body>
 </html>

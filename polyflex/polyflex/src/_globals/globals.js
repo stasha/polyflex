@@ -18,6 +18,7 @@
 	var events = polyflex.events = polyflex.events || {};
 	var routes = polyflex.routes = polyflex.routes || {};
 	var _routes = polyflex._routes = polyflex._routes || {};
+	var routeNames = polyflex.routeNames = polyflex.routeNames || {};
 	var messages = polyflex.messages = polyflex.messages || {};
 
 	/**
@@ -46,6 +47,7 @@
 		print(events, "events");
 		print(routes, "routes");
 		print(_routes, "_routes");
+		print(routeNames, "routeNames");
 		print(Route, "Route");
 	};
 
@@ -70,7 +72,11 @@
 					if (!key) {
 						obj[names[i]] = names[i];
 					} else if (key && !value) {
-						obj[names[i][key]] = names[i];
+						if(key === "value"){
+							obj[names[i]] = i;
+						} else {
+							obj[names[i][key]] = names[i];
+						}
 					} else if (key && value) {
 						if (key === "name") {
 							if(names[i][key]){
@@ -94,6 +100,8 @@
 
 	Channel.ROUTE_ENTER = "route_enter";
 	Channel.ROUTE_EXIT = "route_exit";
+	Channel.BROWSER_BACK = "browser_back";
+	Channel.BROWSER_FORWARD = "browser_forward";
 
 
 
@@ -134,6 +142,7 @@
 	Event.MOUSE_OUT = "mouseout";
 	Event.MOUSE_OVER = "mouseover";
 	Event.MOUSE_UP = "mouseup";
+	Event.POP_STATE = "popstate";
 	Event.READY = "ready";
 	Event.RESET = "reset";
 	Event.RESIZE = "resize";
@@ -173,6 +182,7 @@
 		populateObject(channels, Channel);
 		populateObject(events, Event);
 		populateObject(Route, routes, "name", "route");
+		populateObject(routeNames, Route, "value");
 		populateObject(_routes, routes, "route", "route");
 	};
 

@@ -1,5 +1,5 @@
 <script>
-	(function (window) {
+	(function (window, document) {
 
 		"use strict";
 		var polyflex = window.polyflex = window.polyflex || {};
@@ -50,9 +50,9 @@
 			 */
 			created: function () {
 				this.isDetached = true;
-				try{
+				try {
 					this.one(window, Event.WEB_COMPONENTS_READY, this.componentsReady);
-				} catch (e){
+				} catch (e) {
 					console.warn("You should implement EventBehavior behavior in this component.");
 				}
 			},
@@ -87,6 +87,29 @@
 					elm = elm.parentNode;
 				}
 				return true;
+			},
+			windowScrollPosition: function (obj) {
+				if (obj) {
+					var pos = this.windowScrollPosition();
+					this.debounce("SCROLL-WINDOW", function () {
+						console.log(pos);
+						var currPos = this.windowScrollPosition();
+						window.scrollTo(pos.x, pos.y);
+						TweenMax.to(window, 2, {scrollTo: {x: currPos.x, y: currPos.y}, ease: Power2.easeOut});
+					},1);
+					return;
+				}
+
+				var pos = {};
+				if (window.pageYOffset !== undefined) {
+					pos.x = window.pageXOffset;
+					pos.y = window.pageYOffset;
+				} else {
+					var de = document.documentElement, b = document.body;
+					pos.x = de.scrollLeft || b.scrollLeft || 0;
+					pos.y = de.scrollTop || b.scrollTop || 0;
+				}
+				return pos;
 			},
 			get polyflex() {
 				return window.polyflex;
@@ -163,6 +186,6 @@
 				e.preventDefault();
 			}
 		};
-	})(window);
+	})(window, document);
 
 </script>

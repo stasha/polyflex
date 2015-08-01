@@ -93,19 +93,11 @@
 			 */
 			on: function (element, events, selector, fn) {
 				this.checkEvent(events, "on");
-				var self = this;
-				if (typeof selector === "function" && !fn) {
-					bean.on(element, events, function (e) {
-						selector.call(self, this, e);
-					});
-					fn = selector;
-				} else {
-					bean.on(element, events, selector, function (e) {
-						fn.call(self, this, e);
-					});
-				}
+				bean.on(element, events, selector, fn);
 				if (element !== this) {
-					
+					if (typeof selector === "function") {
+						fn = selector;
+					}
 					this.eventRegister = this.eventRegister || [];
 					this.eventRegister.push({element: element, events: events, callback: fn});
 				}
@@ -212,6 +204,7 @@
 
 				obj.channel = obj.channel || this.defaultMessageChannel;
 				obj.scope = obj.scope || this;
+				obj.dispatcher = this;
 				nerve.send(obj);
 			},
 			/**
