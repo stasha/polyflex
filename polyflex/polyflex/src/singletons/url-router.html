@@ -104,14 +104,14 @@
 					 */
 					var evaluateNavigationDirection = function (currentRoute, lastRoute) {
 						if (lastRoute) {
-							var newUid = currentRoute.context.state.uid || page.len;
-							var oldUid = lastRoute.context.state.uid || page.len;
-							if (newUid < (self.currentUid || page.len)) {
+							var newUid = currentRoute.context.state.uid || page.uid;
+							var oldUid = lastRoute.context.state.uid || page.uid;
+							if (newUid < (self.currentUid || page.uid)) {
 								self.currentUid = newUid;
 								return -1;
 							} else if (self.currentUid && newUid > self.currentUid) {
 								self.currentUid = newUid;
-								if (page.len - 1 === oldUid) {
+								if (page.uid - 1 === oldUid) {
 									self.currentUid = null;
 								}
 								return 1;
