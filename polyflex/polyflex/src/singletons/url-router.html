@@ -25,10 +25,8 @@
 				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior, behaviors.RoutingBehavior],
 				currentRoute: null,
 				lastRoute: null,
-				bodyClicked: false,
-				urlHistory: [],
-				historyPosition: 0,
-				backButtonMarker: "/__b__",
+				historyUid: 0,
+				currentUid: 0,
 				properties: {
 					base: {
 						type: String,
@@ -42,7 +40,10 @@
 					}
 				},
 				created: function () {
-					page.ignorePatterns = [this.backButtonMarker];
+					var self = this;
+					
+					// Registering message listener that will be invoked
+					// if no route is found (404).
 					this.onMessage({
 						channel: Channel.ROUTE_ENTER,
 						route: Route.ROUTE_NOT_FOUND,
@@ -50,13 +51,18 @@
 							console.log("no route found");
 						}
 					});
+					
+					// Registering route not found
 					this.addRoute(Route.ROUTE_NOT_FOUND);
-					var self = this;
-					this.on(document.querySelector("body"), Event.CLICK, function (e) {
-						self.bodyClicked = true;
-						self.debounce("CLEAR-BODY-CLICK", function () {
-							self.bodyClicked = false;
-						}, 10);
+
+					// Saving pages scroll position in state object.
+					this.on(window, Event.SCROLL, function (e) {
+						self.debounce("SAVE-SCROLL-POSITION-IN-STATE", function () {
+							if (self.currentRoute) {
+								self.currentRoute.context.state.scrollPosition = self.windowScrollPosition;
+								self.currentRoute.context.save();
+							}
+						}, 200);
 					});
 				},
 				detached: function () {
@@ -86,50 +92,34 @@
 						}
 					}
 
-					var addBackButtonMarker = function (url) {
-						var sbm = self.backButtonMarker;
-						if (url.indexOf(sbm) === -1) {
-							//var u = url.indexOf("#") > -1 ? url + sbm : url + "#" + sbm;
-							page.replace(url + sbm, null, null, false);
-						}
-					};
-
-					var removeBackButtonMarker = function (url) {
-						var sbm = self.backButtonMarker;
-						var nsbm = "#" + sbm;
-						if (url.indexOf(sbm) > -1) {
-							var u = url.replace(nsbm, "").replace(sbm, "");
-							page.replace(u, null, null, false);
-						}
-					};
-
-					var findHistoryEntry = function (url) {
-						var loc = window.location.href.replace(self.backButtonMarker);
-						var idx = loc.indexOf(url);
-						if (idx > -1) {
-							url = loc.substr(idx);
-						}
-						for (var i = 0; i < self.urlHistory.length; ++i) {
-							if (self.urlHistory[i] === url) {
-								return i;
-							}
-						}
-						return -1;
-					};
-
-
-
-					var calculateNavigation = function (currentRoute, lastRoute) {
-						if (!self.bodyClicked) {
-							var historyIndex = findHistoryEntry(currentRoute.context.canonicalPath);
-							if (currentRoute.context.canonicalPath.indexOf(self.backButtonMarker) === -1 && historyIndex !== self.urlHistory.length - 1) {
-								addBackButtonMarker(currentRoute.context.path);
+					/**
+					 * Returns where browser navigation direction.
+					 * -1 - back button was clicked
+					 *  1 - forward button was clicked
+					 *  0 - normal navigation ocured
+					 * 
+					 * @param {type} currentRoute
+					 * @param {type} lastRoute
+					 * @returns {Number}
+					 */
+					var evaluateNavigationDirection = function (currentRoute, lastRoute) {
+						if (lastRoute) {
+							var newUid = currentRoute.context.state.uid || page.len;
+							var oldUid = lastRoute.context.state.uid || page.len;
+							if (newUid < (self.currentUid || page.len)) {
+								self.currentUid = newUid;
 								return -1;
-							} else if (currentRoute.context.canonicalPath.indexOf(self.backButtonMarker) > -1 || historyIndex === self.urlHistory.length - 1) {
-								removeBackButtonMarker(currentRoute.context.path);
+							} else if (self.currentUid && newUid > self.currentUid) {
+								self.currentUid = newUid;
+								if (page.len - 1 === oldUid) {
+									self.currentUid = null;
+								}
 								return 1;
 							}
 						}
+
+						self.currentUid = null;
+						return 0;
 					};
 
 					/**
@@ -144,25 +134,29 @@
 						newRoute.pattern = rt;
 						newRoute.context = ctx;
 
+						var direction = evaluateNavigationDirection(newRoute, self.lastRoute);
 
-						// if currentRoute is set than we process it as old route
+						// if forward button was clicked than we send event
+						if (direction === -1) {
+							// sends message that route is changed using back button.
+							self.sendMessage({
+								channel: Channel.BROWSER_BACK,
+								route: route,
+								context: {currentRoute: newRoute, lastRoute: self.lastRoute}
+							});
+						} else if (direction === 1) {
+							self.sendMessage({
+								channel: Channel.BROWSER_FORWARD,
+								route: route,
+								context: {currentRoute: newRoute, lastRoute: self.lastRoute}
+							});
+						}
+
 						if (self.lastRoute) {
 
 							// Send message that route is changed/exited.
 							// Note that "route-exited" message is sent before
 							// "route-entered" message.
-							self.currentRoute.windowScrollPosition = self.windowScrollPosition();
-
-							if (calculateNavigation(newRoute, self.lastRoute) === -1) {
-								// sends message that route is changed using back button.
-								self.sendMessage({
-									channel: Channel.BROWSER_BACK,
-									route: route,
-									context: {currentRoute: newRoute, lastRoute: self.lastRoute}
-								});
-							}
-
-
 							self.sendMessage({
 								channel: Channel.ROUTE_EXIT,
 								route: self.lastRoute,
@@ -173,33 +167,10 @@
 
 						self.currentRoute = newRoute;
 
-						// if navigation occured without click on body than we 
-						// asume that url navigation occured using browsers 
-						// back/forward buttons.
-						if (!self.bodyClicked) {
-							var scrp = self.currentRoute.windowScrollPosition || {x: 0, y: 0};
-							self.windowScrollPosition.call(self, {x: scrp.x, y: scrp.y});
-							self.log("Scrolling window to position: x=" + scrp.x + ", y=" + scrp.y);
-
-							if (calculateNavigation(self.currentRoute, self.lastRoute) === 1) {
-								// sends message that route is changed using forward button.
-								self.sendMessage({
-									channel: Channel.BROWSER_FORWARD,
-									route: route,
-									context: {currentRoute: newRoute, lastRoute: self.lastRoute}
-								});
-							}
-
-						} else {
-							// storing/removing urls in/from local history so we later can
-							// calculate if browser is going forward or back.
-							var historyIndex = findHistoryEntry(self.currentRoute.context.canonicalPath);
-							if (historyIndex > -1) {
-								self.urlHistory = self.urlHistory.splice(historyIndex, 1);
-							}
-
-							self.urlHistory.push(ctx.canonicalPath);
-						}
+						// setting window scroll position
+						var scrp = self.currentRoute.context.state.scrollPosition || {x: 0, y: 0};
+						self.windowScrollPosition = {x: scrp.x, y: scrp.y};
+						self.log("Scrolling window to position: x=" + scrp.x + ", y=" + scrp.y);
 
 
 						document.querySelector("title").innerHTML = self.currentRoute.title || "";
@@ -215,23 +186,6 @@
 						// changing from old route to new route
 						self.lastRoute = self.currentRoute;
 					});
-
-					/**
-					 * Registering route with url router.
-					 * 
-					 * @param {type} ctx
-					 * @returns {undefined}
-					 */
-//					page.exit(rt, function (ctx) {
-//						// Send message that route is changed/exiting.
-//						// Note that "route-exited" message is sent before
-//						// "route-entered" message.
-//						self.sendMessage({
-//							channel: Channel.ROUTE_EXIT,
-//							route: route,
-//							context: {context: ctx}
-//						});
-//					});
 
 					page.start({dispatch: false});
 
