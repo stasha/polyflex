@@ -5,6 +5,9 @@
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 		var Event = polyflex.Event;
+
+		window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
+
 		/**
 		 * Behavior containing core functionality.
 		 * 
@@ -14,7 +17,6 @@
 			customElements: [behaviors.EventBehavior],
 			isDetached: null,
 			webComponentsReady: null,
-			scrollPosition: null,
 			properties: {
 				debug: {
 					type: Boolean,
@@ -103,13 +105,13 @@
 			},
 			set windowScrollPosition(obj) {
 				if (obj) {
-					this.scrollPosition = obj;
+
+					var wp = this.windowScrollPosition;
 					// applyes new position to window
-					var pos = this.windowScrollPosition;
 					this.debounce("SCROLL-WINDOW", function () {
-						window.scrollTo(pos.x, pos.y);
-						TweenMax.to(window, .3, {scrollTo: {x: obj.x, y: obj.y}, ease: Power2.easeOut});
-					}, 1);
+						TweenMax.set(window, {scrollTo: {x: wp.x, y: wp.y}});
+						window.scrollToEffect = TweenMax.to(window, .3, {scrollTo: {x: obj.x, y: obj.y, autoKill: false}, ease: Power2.easeOut});
+					}, 3);
 				}
 			},
 			get polyflex() {

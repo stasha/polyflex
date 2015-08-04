@@ -9,8 +9,8 @@
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 
 		var request = window.request;
-		
-		if(!request){
+
+		if (!request) {
 			throw "AjaxBehavior request is not set!";
 		}
 
@@ -52,12 +52,14 @@
 			 * @returns {String}
 			 */
 			buildUrl: function (url) {
-				var index = url.indexOf("//");
-				if (index > 0 && index < 8) {
-					return url;
-				}
+				if (url) {
+					var index = url.indexOf("//");
+					if (index > 0 && index < 8) {
+						return url;
+					}
 
-				return this.getBase() + url;
+					return this.getBase() + url;
+				}
 			},
 			/**
 			 * Performs get request.

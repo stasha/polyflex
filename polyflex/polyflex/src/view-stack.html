@@ -94,12 +94,7 @@
 						item.name = i;
 						if (i !== this.selectedIndex) {
 							item.style.display = "none";
-							if (this._hideEffect) {
-								var he = extend(true, this._hideEffect);
-								he.delay = 0;
-								he.speed = 0;
-								he.start(item);
-							}
+							item.style.opacity = 0;
 						} else {
 							item.style.opacity = 1;
 							item.style.display = "initial";
@@ -127,13 +122,13 @@
 
 						this.router.addRoute(url);
 					}
-					
+
 					var exitRoute = item.getAttribute("exit-route");
-					if(exitRoute){
+					if (exitRoute) {
 						this.onMessage({
 							channel: Channel.ROUTE_EXIT,
 							route: exitRoute,
-							callback: function(context){
+							callback: function (context) {
 								self.exitingItemRoute(context, item);
 							}
 						});
@@ -161,7 +156,7 @@
 					}
 
 				},
-				exitingItemRoute: function(context, item, ignoreSameUrl){
+				exitingItemRoute: function (context, item, ignoreSameUrl) {
 					console.log("exiting route");
 				},
 				attached: function () {
@@ -207,11 +202,11 @@
 
 					if (newValue < 0 || newValue > this.items.length - 1) {
 						this.selectedIndex = oldValue;
-						newItem.style.display = "block";
 						console.warn("the selectedIndex: " + newValue + " is out of range!");
 						return;
 					}
-
+	
+					newItem.style.display = "block";
 					var self = this;
 
 					if (this._showEffect) {
@@ -273,8 +268,10 @@
 				},
 				updateSize: function (item) {
 					if (this.resizeToContent && item) {
-						this.style.width = item.offsetWidth + "px";
-						this.style.height = item.offsetHeight + "px";
+						this.debounce("RESIZE-ITEM", function () {
+							this.style.width = item.offsetWidth + "px";
+							this.style.height = item.offsetHeight + "px";
+						}, 1);
 					}
 				},
 				preShown: function (item) {

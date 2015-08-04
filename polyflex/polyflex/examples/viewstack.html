@@ -22,19 +22,14 @@
 
 	<style>
 		
-/*		html, body{
-			overflow: hidden;
-			width: 100vw;
-			height: 100vh;
+		html, body{
 			margin: 0;
 		}
 		
 		.body {
-			overflow: auto;
-			width: 100vw;
-			height: 100vh;
 			position: relative;
-		}*/
+			padding: 5px;
+		}
 		
 		.nav {
 			position: fixed;
@@ -43,10 +38,13 @@
 		view-stack {
 			position: absolute;
 			top: 50px;
+			display: block;
 		}
+		
 		ajax-container {
 			width: 2000px;
 			height: 2000px;
+			display: block;
 		}
 		
 	
@@ -65,13 +63,13 @@
 			<a tabindex="0" href="/polyflex/polyflex/examples/fifth-page">7</a>
 		</div>
 		<view-stack name="view-stack-element" debug selected-index="1" resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
-			<ajax-container name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
-			<ajax-container name="dva">2</ajax-container>
-			<ajax-container name="tri" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
-			<ajax-container name="cetiri" route="Route.FOURTH_PAGE">4</ajax-container>
-			<ajax-container name="pet" route="Route.FOURTH_PAGE">5</ajax-container>
-			<ajax-container name="sest" route="Route.FOURTH_PAGE">6</ajax-container>
-			<ajax-container name="sedam" route="Route.FIFTH_PAGE">7</ajax-container>
+			<ajax-container class="ac" name="jedan" style="width: 800px; height: 900px;">1</ajax-container>
+			<ajax-container class="ac" name="dva">2</ajax-container>
+			<ajax-container class="ac" name="tri" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
+			<ajax-container class="ac" name="cetiri" route="Route.FOURTH_PAGE">4</ajax-container>
+			<ajax-container class="ac" name="pet" route="Route.FOURTH_PAGE">5</ajax-container>
+			<ajax-container class="ac" name="sest" route="Route.FOURTH_PAGE">6</ajax-container>
+			<ajax-container class="ac" name="sedam" route="Route.FIFTH_PAGE">7</ajax-container>
 		</view-stack>
 
 		<ajax-container name="osam" url="Route.FOURTH_PAGE">8</ajax-container>

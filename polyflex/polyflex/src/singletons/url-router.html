@@ -25,7 +25,6 @@
 				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior, behaviors.RoutingBehavior],
 				currentRoute: null,
 				lastRoute: null,
-				historyUid: 0,
 				currentUid: 0,
 				properties: {
 					base: {
@@ -41,7 +40,7 @@
 				},
 				created: function () {
 					var self = this;
-					
+
 					// Registering message listener that will be invoked
 					// if no route is found (404).
 					this.onMessage({
@@ -51,15 +50,41 @@
 							console.log("no route found");
 						}
 					});
-					
+
 					// Registering route not found
 					this.addRoute(Route.ROUTE_NOT_FOUND);
+					
+					var cv = document.querySelector(".body");
+					var cvs = this.body.currentStyle || window.getComputedStyle(this.body);
+
+					this.on(window, 'popstate', function (e){
+//						cv.style.position = "fixed";
+//						cv.style.left = 0;
+//						cv.style.top = 0;
+//						cv.style.bottom = 0;
+//						cv.style.right = 0;
+//						cv.style.overflow = "auto";
+//						cv.scrollLeft = window.scrollPosition.x;
+//						cv.scrollTop = window.scrollPosition.y;
+//						self.body.style.overflow = "visible";
+//
+//						setTimeout(function(){
+//							self.body.style.overflow = "auto";
+//							cv.style.position = "static";
+//							cv.style.overflow = "visible";
+//							cv.scrollLeft = 0;
+//							cv.scrollTop = 0;
+//							
+//							//window.scrollToEffect = TweenMax.to(window, .3, {scrollTo: {x: obj.x, y: obj.y, autoKill: false}, ease: Power2.easeOut});
+//							//self.windowScrollPosition = {x:  window.scrollPosition.x, y:  window.scrollPosition.y};
+//						}, 1);
+					});
 
 					// Saving pages scroll position in state object.
-					this.on(window, Event.SCROLL, function (e) {
+					window.addEventListener(Event.SCROLL, function (e) {
 						self.debounce("SAVE-SCROLL-POSITION-IN-STATE", function () {
 							if (self.currentRoute) {
-								self.currentRoute.context.state.scrollPosition = self.windowScrollPosition;
+								self.currentRoute.context.state.scrollPosition = window.scrollPosition = self.windowScrollPosition;
 								self.currentRoute.context.save();
 							}
 						}, 200);
@@ -96,7 +121,7 @@
 					 * Returns where browser navigation direction.
 					 * -1 - back button was clicked
 					 *  1 - forward button was clicked
-					 *  0 - normal navigation ocured
+					 *  0 - normal navigation occured
 					 * 
 					 * @param {type} currentRoute
 					 * @param {type} lastRoute
