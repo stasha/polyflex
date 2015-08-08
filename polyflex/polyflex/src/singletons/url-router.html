@@ -27,9 +27,21 @@
 				lastRoute: null,
 				currentUid: 0,
 				properties: {
-					base: {
+					baseUrl: {
 						type: String,
 						observer: "setBase"
+					},
+					enableBackForwardScrollToAnimation: {
+						type: Boolean,
+						value: false
+					},
+					backForwardAnimationSpeed: {
+						type: Number,
+						value: .3
+					},
+					backForwardAnimationDelay: {
+						type: Number,
+						value: 1000
 					}
 				},
 				setBase: function (newValue) {
@@ -53,42 +65,89 @@
 
 					// Registering route not found
 					this.addRoute(Route.ROUTE_NOT_FOUND);
-					
+
 					var cv = document.querySelector(".body");
 					var cvs = this.body.currentStyle || window.getComputedStyle(this.body);
 
-					this.on(window, 'popstate', function (e){
-//						cv.style.position = "fixed";
-//						cv.style.left = 0;
-//						cv.style.top = 0;
-//						cv.style.bottom = 0;
-//						cv.style.right = 0;
-//						cv.style.overflow = "auto";
-//						cv.scrollLeft = window.scrollPosition.x;
-//						cv.scrollTop = window.scrollPosition.y;
-//						self.body.style.overflow = "visible";
-//
-//						setTimeout(function(){
-//							self.body.style.overflow = "auto";
-//							cv.style.position = "static";
-//							cv.style.overflow = "visible";
-//							cv.scrollLeft = 0;
-//							cv.scrollTop = 0;
-//							
-//							//window.scrollToEffect = TweenMax.to(window, .3, {scrollTo: {x: obj.x, y: obj.y, autoKill: false}, ease: Power2.easeOut});
-//							//self.windowScrollPosition = {x:  window.scrollPosition.x, y:  window.scrollPosition.y};
-//						}, 1);
+					window.addEventListener("hashchange", function () {
+						console.log("hashchanged");
+					});
+					window.addEventListener('popstate', function (e) {
+						if (!self.enableBackForwardScrollToAnimation) {
+							self.skipScrollToAnimation = true;
+							// triggers scroll end if scrollToEffect is disabled.
+							self.debounce('WINDOW-SCROLL-END', function () {
+								//self.trigger("window", new CustomEvent(Event.SCROLL_END, {detail: obj}));
+							}, 2);
+							return;
+						}
+
+						self.lastScrollPosition = e.state.scrollPosition;
+						self.disableBodyScroll();
+
+						self.debounce('SCROLL-TO', function () {
+							self.scrollFromPopState = true;
+
+							var wp = window.scrollPosition;
+							var obj = e.state.scrollPosition;
+
+
+							if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
+								TweenMax.set(cv, {scrollTo: {x: wp.x, y: wp.y}});
+							}
+//						window.scrollToEffect && window.scrollToEffect.kill();
+							window.scrollToEffect = TweenMax.to(cv, self.backForwardAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
+									self.debounce("ENABLE-BODY-SCROLL", function () {
+										self.scrollFromPopState = false;
+										self.saveScrollPosition();
+										self.enableBodyScroll();
+									}, 2);
+									//self.trigger("window", new CustomEvent(Event.SCROLL_END, {detail: obj}));
+								}
+							});
+
+						}, self.backForwardAnimationDelay);
 					});
 
-					// Saving pages scroll position in state object.
-					window.addEventListener(Event.SCROLL, function (e) {
+
+
+					self.saveScrollPosition = function () {
 						self.debounce("SAVE-SCROLL-POSITION-IN-STATE", function () {
-							if (self.currentRoute) {
+							if (self.currentRoute && !self.scrollFromPopState) {
 								self.currentRoute.context.state.scrollPosition = window.scrollPosition = self.windowScrollPosition;
 								self.currentRoute.context.save();
 							}
+							self.scrollFromPopState = false;
 						}, 200);
-					});
+					};
+
+					// Saving pages scroll position in state object.
+					window.addEventListener(Event.SCROLL, self.saveScrollPosition);
+					//cv.addEventListener(Event.SCROLL, self.saveScrollPosition);
+
+
+
+					self.enableBodyScroll = function (e) {
+						self.body.classList.remove("non-scrollable-viewport");
+						var pos = {x: cv.scrollLeft, y: cv.scrollTop};
+						cv.classList.remove("scrollable-viewport");
+						TweenMax.set(window, {scrollTo: {x: pos.x, y: pos.y}});
+						self.bodyIsScrolling = true;
+					};
+
+					self.disableBodyScroll = function (e) {
+						if (self.body.className.indexOf("non-scrollable-viewport") === -1) {
+							self.scrollFromPopState = true;
+							var pos = self.lastScrollPosition = window.scrollPosition;
+							self.body.classList.add("non-scrollable-viewport");
+							cv.classList.add("scrollable-viewport");
+							TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
+							self.bodyIsScrolling = false;
+						}
+					};
+
+
+
 				},
 				detached: function () {
 					page.stop();
@@ -194,6 +253,7 @@
 
 						// setting window scroll position
 						var scrp = self.currentRoute.context.state.scrollPosition || {x: 0, y: 0};
+						
 						self.windowScrollPosition = {x: scrp.x, y: scrp.y};
 						self.log("Scrolling window to position: x=" + scrp.x + ", y=" + scrp.y);
 

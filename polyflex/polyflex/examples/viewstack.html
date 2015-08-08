@@ -4,6 +4,55 @@
 		<title>TODO supply a title</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		
+		<style>
+
+		html, body{
+			margin: 0;
+		}
+
+		.scrollable-viewport,
+		.non-scrollable-viewport {
+			width: 100vw;
+			height: 100vh;
+			overflow: auto;
+		}
+		
+		.non-scrollable-viewport {
+			overflow: hidden;
+		}
+
+		.body {
+			position: relative;
+		}
+
+		.nav {
+			position: fixed;
+			z-index: 10;
+		}
+
+		.nav a {
+			padding: 10px;
+			background-color: #eee;
+		}
+
+		view-stack {
+			position: absolute;
+			top: 50px;
+			display: block;
+		}
+
+		view-stack ajax-container {
+			width: 2000px;
+			height: 2000px;
+			display: block;
+
+			background: url('img/pattern.jpg') white no-repeat center center;
+		}
+
+
+
+	</style>
 
 		<script src="../../webcomponentsjs/webcomponents.min.js"></script>
 		<link rel="import" href="../src/singletons/polyflex-base.html" />
@@ -15,41 +64,18 @@
 
 	<polyflex-base 
 		router-root="/polyflex/polyflex/examples"
-		ajax-root="/polyflex/polyflex/examples"></polyflex-base>
+		ajax-root="/polyflex/polyflex/examples"
+		enable-scroll-to-animation
+		scroll-to-animation-delay="1000"
+		enable-back-forward-scroll-to-animation
+		back-forward-animation-delay="1000"
+		
+		></polyflex-base>
 
 	<fx-fade id="fadeIn" to="1" speed="0.5" delay="1"></fx-fade>
 	<fx-fade id="fadeOut" to="0" speed="0.5"></fx-fade>
 
-	<style>
-		
-		html, body{
-			margin: 0;
-		}
-		
-		.body {
-			position: relative;
-			padding: 5px;
-		}
-		
-		.nav {
-			position: fixed;
-		}
-
-		view-stack {
-			position: absolute;
-			top: 50px;
-			display: block;
-		}
-		
-		ajax-container {
-			width: 2000px;
-			height: 2000px;
-			display: block;
-		}
-		
 	
-		
-	</style>
 </head>
 <body>
 	<div class="body">

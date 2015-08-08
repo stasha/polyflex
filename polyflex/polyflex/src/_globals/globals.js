@@ -147,6 +147,7 @@
 	Event.RESET = "reset";
 	Event.RESIZE = "resize";
 	Event.SCROLL = "scroll";
+	Event.SCROLL_END = "scrollend";
 	Event.SELECT = "select";
 	Event.SUBMIT = "submit";
 	Event.TOUCH_CANCEL = "touchcancel";

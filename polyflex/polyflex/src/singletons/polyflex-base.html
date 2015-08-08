@@ -18,7 +18,13 @@
 <dom-module id="polyflex-base">
 
 	<template>
-		<url-router base="{{routerRoot}}"></url-router>
+		<url-router 
+			base-url$="{{routerRoot}}"
+			enable-scroll-to-animation$="{{enableScrollToAnimation}}"
+			enable-back-forward-scroll-to-animation$="{{enableBackForwardScrollToAnimation}}"
+			back-forward-animation-speed$="{{backForwardAnimationSpeed}}"
+			back-forward-animation-delay$="{{backForwardAnimationDelay}}"
+			></url-router>
 		<ajax-base ajax-base="{{ajaxRoot}}"></ajax-base>
 	</template>
 
@@ -35,6 +41,32 @@
 				},
 				ajaxRoot: {
 					type: String
+				},
+				enableScrollToAnimation: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				scrollToAnimationSpeed: {
+					type: Number,
+					value: .3
+				},
+				scrollToAnimationDelay: {
+					type: Number,
+					value: 0
+				},
+				enableBackForwardScrollToAnimation: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				backForwardAnimationSpeed: {
+					type: Number,
+					value: .3
+				},
+				backForwardAnimationDelay: {
+					type: Number,
+					value: 1000
 				}
 			},
 			created: function(){

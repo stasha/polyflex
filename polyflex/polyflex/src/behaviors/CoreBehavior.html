@@ -6,6 +6,7 @@
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 		var Event = polyflex.Event;
 
+
 		window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
 
 		/**
@@ -17,6 +18,8 @@
 			customElements: [behaviors.EventBehavior],
 			isDetached: null,
 			webComponentsReady: null,
+			skipScrollToAnimation: false,
+			skipWindowScrollToPosition: false,
 			properties: {
 				debug: {
 					type: Boolean,
@@ -76,6 +79,9 @@
 			get body() {
 				return document.querySelector("body");
 			},
+			get base() {
+				return document.querySelector("polyflex-base");
+			},
 			/**
 			 * Returns if this element is displayed in th DOM or not.
 			 * 
@@ -104,15 +110,32 @@
 				return pos;
 			},
 			set windowScrollPosition(obj) {
-				if (obj) {
-
-					var wp = this.windowScrollPosition;
-					// applyes new position to window
-					this.debounce("SCROLL-WINDOW", function () {
-						TweenMax.set(window, {scrollTo: {x: wp.x, y: wp.y}});
-						window.scrollToEffect = TweenMax.to(window, .3, {scrollTo: {x: obj.x, y: obj.y, autoKill: false}, ease: Power2.easeOut});
-					}, 3);
+				if (this.skipWindowScrollToPosition) {
+					this.skipWindowScrollToPosition = false;
+					return;
 				}
+				this.debounce('SCROLL-TO-DELAY', function () {
+					if (obj) {
+						if (this.base && this.base.enableScrollToAnimation) {
+							var wp = this.windowScrollPosition;
+							// applyes new position to window
+							this.debounce("SCROLL-WINDOW", function () {
+								if (!this.skipScrollToAnimation) {
+									TweenMax.set(window, {scrollTo: {x: wp.x, y: wp.y}});
+									window.scrollToEffect = TweenMax.to(window, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: false}, ease: Power2.easeOut});
+								} else {
+									TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
+								}
+								this.skipScrollToAnimation = false;
+							}, 4);
+						} else {
+							this.debounce("SCROLL-WINDOW", function () {
+								TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
+								this.skipScrollToAnimation = false;
+							}, 4);
+						}
+					}
+				}, this.base.scrollToAnimationDelay);
 			},
 			get polyflex() {
 				return window.polyflex;
