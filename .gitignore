@@ -3,3 +3,12 @@ private.properties
 private.xml
 project.properties
 project.xml
+/.gitattributes
+extend.js
+gsap
+nerve
+page
+polymer
+superagent
+webcomponentsjs
+bean
