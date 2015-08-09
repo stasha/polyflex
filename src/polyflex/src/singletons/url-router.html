@@ -69,10 +69,23 @@
 					var cv = document.querySelector(".body");
 					var cvs = this.body.currentStyle || window.getComputedStyle(this.body);
 
-					window.addEventListener("hashchange", function () {
-						console.log("hashchanged");
-					});
 					window.addEventListener('popstate', function (e) {
+
+						var hashScrollPosition = {x: 0, y: 0};
+
+						if ((!e || !e.state) && self.currentRoute) {
+							var hash = self.currentRoute.context.hash;
+							var elm;
+							try {
+								elm = document.querySelector("#" + hash) || document.querySelector('[name="' + hash + '"');
+								if (elm) {
+									hashScrollPosition = self.getOffset(elm);
+								}
+							} catch (err) {
+								// non supported selector
+							}
+
+						}
 						if (!self.enableBackForwardScrollToAnimation) {
 							self.skipScrollToAnimation = true;
 							// triggers scroll end if scrollToEffect is disabled.
@@ -82,20 +95,25 @@
 							return;
 						}
 
-						self.lastScrollPosition = e.state.scrollPosition;
+						if (e.state && e.state.scrollPosition) {
+							self.lastScrollPosition = e.state.scrollPosition;
+						} else {
+							self.lastScrollPosition = hashScrollPosition;
+						}
 						self.disableBodyScroll();
 
 						self.debounce('SCROLL-TO', function () {
 							self.scrollFromPopState = true;
 
 							var wp = window.scrollPosition;
-							var obj = e.state.scrollPosition;
+							var obj = (e.state && e.state.scrollPosition) || hashScrollPosition;
 
 
 							if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
 								TweenMax.set(cv, {scrollTo: {x: wp.x, y: wp.y}});
 							}
-//						window.scrollToEffect && window.scrollToEffect.kill();
+
+
 							window.scrollToEffect = TweenMax.to(cv, self.backForwardAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
 									self.debounce("ENABLE-BODY-SCROLL", function () {
 										self.scrollFromPopState = false;
@@ -105,6 +123,7 @@
 									//self.trigger("window", new CustomEvent(Event.SCROLL_END, {detail: obj}));
 								}
 							});
+
 
 						}, self.backForwardAnimationDelay);
 					});
@@ -148,6 +167,22 @@
 
 
 
+				},
+				scrollToHash: function (ctx) {
+					var elm;
+					if (ctx.hash) {
+						try {
+							elm = document.querySelector("#" + ctx.hash) || document.querySelector('[name="' + ctx.hash + '"');
+							if (elm) {
+								this.enableBodyScroll();
+								this.windowScrollPosition = elm;
+							}
+						} catch (err) {
+							// non supported selector
+						}
+					}
+
+					return elm;
 				},
 				detached: function () {
 					page.stop();
@@ -218,6 +253,18 @@
 						newRoute.pattern = rt;
 						newRoute.context = ctx;
 
+						// setting window scroll position
+						var scrp = ctx.state.scrollPosition || {x: 0, y: 0};
+						var wscrp = self.windowScrollPosition;
+						self.debounce('TEST', function () {
+							TweenMax.set(window, {scrollTo: wscrp});
+						}, 0);
+						self.windowScrollPosition = {x: scrp.x, y: scrp.y};
+						self.log("Scrolling window to position: x=" + scrp.x + ", y=" + scrp.y);
+
+						self.scrollToHash.call(self, ctx);
+
+
 						var direction = evaluateNavigationDirection(newRoute, self.lastRoute);
 
 						// if forward button was clicked than we send event
@@ -250,13 +297,6 @@
 
 
 						self.currentRoute = newRoute;
-
-						// setting window scroll position
-						var scrp = self.currentRoute.context.state.scrollPosition || {x: 0, y: 0};
-						
-						self.windowScrollPosition = {x: scrp.x, y: scrp.y};
-						self.log("Scrolling window to position: x=" + scrp.x + ", y=" + scrp.y);
-
 
 						document.querySelector("title").innerHTML = self.currentRoute.title || "";
 

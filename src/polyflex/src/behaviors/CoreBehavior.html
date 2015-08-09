@@ -15,7 +15,7 @@
 		 * @type type
 		 */
 		behaviors.CoreBehavior = {
-			customElements: [behaviors.EventBehavior],
+			customElements: [behaviors.RoutingBehavior, behaviors.EventBehavior],
 			isDetached: null,
 			webComponentsReady: null,
 			skipScrollToAnimation: false,
@@ -82,6 +82,18 @@
 			get base() {
 				return document.querySelector("polyflex-base");
 			},
+			getOffset: function (elm) {
+				var bodyRect = document.querySelector(".body").getBoundingClientRect(),
+						elemRect = elm.getBoundingClientRect(),
+						top = elemRect.top - bodyRect.top,
+						left = elemRect.left - bodyRect.left;
+
+				return {x: left, y: top};
+			},
+			getComputedStyle: function (elm) {
+				var style = elm.currentStyle || window.getComputedStyle(elm);
+				return style;
+			},
 			/**
 			 * Returns if this element is displayed in th DOM or not.
 			 * 
@@ -110,19 +122,28 @@
 				return pos;
 			},
 			set windowScrollPosition(obj) {
+				var self = this;
 				if (this.skipWindowScrollToPosition) {
 					this.skipWindowScrollToPosition = false;
 					return;
 				}
 				this.debounce('SCROLL-TO-DELAY', function () {
 					if (obj) {
+
+						if (typeof obj.getAttribute === "function") {
+							obj = this.getOffset(obj);
+						}
+
 						if (this.base && this.base.enableScrollToAnimation) {
 							var wp = this.windowScrollPosition;
 							// applyes new position to window
 							this.debounce("SCROLL-WINDOW", function () {
-								if (!this.skipScrollToAnimation) {
+								if (!this.skipScrollToAnimation && !this.scrollFromPopState) {
 									TweenMax.set(window, {scrollTo: {x: wp.x, y: wp.y}});
-									window.scrollToEffect = TweenMax.to(window, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: false}, ease: Power2.easeOut});
+									TweenMax.to(window, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function(){
+										self.scrollFromPopState = false;
+										self.saveScrollPosition();
+									}});
 								} else {
 									TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
 								}
