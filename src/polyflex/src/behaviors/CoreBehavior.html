@@ -7,7 +7,7 @@
 		var Event = polyflex.Event;
 
 
-		window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
+		window.lastScrollPosition = window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
 
 		/**
 		 * Behavior containing core functionality.
@@ -15,7 +15,7 @@
 		 * @type type
 		 */
 		behaviors.CoreBehavior = {
-			customElements: [behaviors.RoutingBehavior, behaviors.EventBehavior],
+			customElements: [behaviors.EventBehavior],
 			isDetached: null,
 			webComponentsReady: null,
 			skipScrollToAnimation: false,
@@ -61,6 +61,39 @@
 				} catch (e) {
 					console.warn("You should implement EventBehavior behavior in this component.");
 				}
+
+				var cv = document.querySelector(".body");
+
+				var self = this;
+				self.enableBodyScroll = function (e) {
+					var pos = self.bodyScrollPosition;
+					self.body.classList.remove("non-scrollable-viewport");
+					cv.classList.remove("scrollable-viewport");
+					TweenMax.set(window, {scrollTo: {x: pos.x, y: pos.y}});
+					self.bodyIsScrolling = true;
+					window.scrollPosition.ignoreAnchors = false;
+				};
+
+				self.debounceDisable = function (delay, position) {
+					var pos = position || window.lastScrollPosition;
+					self.disableBodyScroll(pos);
+					TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
+					self.debounce('DEBOUNCE-DISABLE', function () {
+						self.disableBodyScroll(pos);
+						TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
+					}, delay);
+				};
+
+				self.disableBodyScroll = function (position) {
+					if (self.body.className.indexOf("non-scrollable-viewport") === -1) {
+						//self.scrollFromPopState = true;
+						var pos = position || window.lastScrollPosition;
+						self.body.classList.add("non-scrollable-viewport");
+						cv.classList.add("scrollable-viewport");
+						TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
+						self.bodyIsScrolling = false;
+					}
+				};
 			},
 			/**
 			 * Invoked when all webcomponents are ready.
@@ -77,22 +110,44 @@
 			 * @returns {Element}
 			 */
 			get body() {
-				return document.querySelector("body");
+				return document.body;
 			},
 			get base() {
 				return document.querySelector("polyflex-base");
 			},
-			getOffset: function (elm) {
-				var bodyRect = document.querySelector(".body").getBoundingClientRect(),
+			getOffset: function (elm, againstElm) {
+				var bdy = againstElm || document.querySelector(".body");
+				var bodyRect = bdy.getBoundingClientRect(),
 						elemRect = elm.getBoundingClientRect(),
-						top = elemRect.top - bodyRect.top,
-						left = elemRect.left - bodyRect.left;
+						top = -bdy.scrollTop - (elemRect.top - bodyRect.top),
+						left = -bdy.scrollLeft - (elemRect.left - bodyRect.left);
 
 				return {x: left, y: top};
+			},
+			getOffsetWithoutScrollOffset: function (elm, againstElm) {
+				var offset = this.getOffset(elm, againstElm);
+				offset.x = Math.abs(offset.x);
+				offset.y = Math.abs(offset.y);
+				return offset;
 			},
 			getComputedStyle: function (elm) {
 				var style = elm.currentStyle || window.getComputedStyle(elm);
 				return style;
+			},
+			getElementFromHash: function (context) {
+				var elm;
+				var ctx = context || (this.routeContext && this.routeContext.currentRoute && this.routeContext.currentRoute.context);
+				if (!ctx) {
+					ctx = this.currentRoute && this.currentRoute.context;
+				}
+				if (ctx) {
+					try {
+						elm = document.querySelector("#" + ctx.hash) || document.querySelector('[name="' + ctx.hash + '"');
+					} catch (err) {
+						// non supported selector
+					}
+				}
+				return elm;
 			},
 			/**
 			 * Returns if this element is displayed in th DOM or not.
@@ -109,6 +164,9 @@
 				}
 				return true;
 			},
+			setWindowScrollObject: function (data) {
+				window.scrollPosition = extend(window.scrollPosition || {}, data);
+			},
 			get windowScrollPosition() {
 				var pos = {};
 				if (window.pageYOffset !== undefined) {
@@ -122,6 +180,8 @@
 				return pos;
 			},
 			set windowScrollPosition(obj) {
+				this.disableBodyScroll();
+
 				var self = this;
 				if (this.skipWindowScrollToPosition) {
 					this.skipWindowScrollToPosition = false;
@@ -131,32 +191,60 @@
 					if (obj) {
 
 						if (typeof obj.getAttribute === "function") {
-							obj = this.getOffset(obj);
+							obj = this.getOffsetWithoutScrollOffset(obj);
 						}
 
 						if (this.base && this.base.enableScrollToAnimation) {
 							var wp = this.windowScrollPosition;
 							// applyes new position to window
 							this.debounce("SCROLL-WINDOW", function () {
+								var cv = document.querySelector(".body");
+
+
 								if (!this.skipScrollToAnimation && !this.scrollFromPopState) {
-									TweenMax.set(window, {scrollTo: {x: wp.x, y: wp.y}});
-									TweenMax.to(window, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function(){
-										self.scrollFromPopState = false;
-										self.saveScrollPosition();
-									}});
+									//TweenMax.set(cv, {scrollTo: {x: wp.x, y: wp.y}});
+									window.scrollToEffect = TweenMax.to(cv, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
+											self.debounce('ENABLE-BODY-SCROLL', function () {
+												self.enableBodyScroll();
+											}, 5)
+										}});
 								} else {
 									TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
 								}
 								this.skipScrollToAnimation = false;
-							}, 4);
+							}, 5);
 						} else {
 							this.debounce("SCROLL-WINDOW", function () {
 								TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
 								this.skipScrollToAnimation = false;
-							}, 4);
+							}, 5);
 						}
 					}
 				}, this.base.scrollToAnimationDelay);
+			},
+			get fakeBodyScrollPosition() {
+				var fb = document.querySelector(".body");
+				return extend({}, window.scrollPosition, {x: fb.scrollLeft, y: fb.scrollTop});
+			},
+			get bodyScrollPosition(){
+				var wsp = this.windowScrollPosition;
+				var fbs = this.fakeBodyScrollPosition;
+				
+				if(wsp.x === 0 && wsp.y === 0 && (fbs.x > 0 || fbs.y > 0)){
+					return extend({}, wsp, fbs);
+				}
+				return extend({}, fbs, wsp);
+			},
+			updateWindowScrollPosition: function () {
+				this.disableBodyScroll();
+
+				var elm;
+				if (!window.scrollPosition.ignoreAnchors) {
+					elm = this.getElementFromHash();
+					window.scrollPosition.ignoreAnchors = false;
+				}
+				this.windowScrollPosition = (elm && this.getOffsetWithoutScrollOffset(elm)) || window.scrollPosition;
+
 			},
 			get polyflex() {
 				return window.polyflex;
@@ -169,6 +257,10 @@
 			},
 			get urls() {
 				return this.polyflex.urls;
+			},
+			
+			get fakeBody(){
+				return document.querySelector(".body");
 			},
 			/**
 			 * Looks up for an object based on passed string path.

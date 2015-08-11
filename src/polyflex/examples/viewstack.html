@@ -56,6 +56,11 @@
 			margin: 10px;
 			border: 10px solid;
 		}
+		
+		.dva {
+			display: block;
+			margin-top: 20px;
+		}
 
 	</style>
 
@@ -71,9 +76,8 @@
 		router-root="/polyflex/examples"
 		ajax-root="/polyflex/examples"
 		enable-scroll-to-animation
-		scroll-to-animation-delay="1000"
-		enable-back-forward-scroll-to-animation
-		back-forward-animation-delay="1000"
+		scroll-to-animation-delay="3"
+		scroll-to-animation-speed="0.2"
 		
 		></polyflex-base>
 
@@ -86,7 +90,7 @@
 	<div class="body">
 		<div class="nav">
 			<a tabindex="0" href="/polyflex/examples/first-page#jedan">#jedan</a>
-			<a tabindex="0" href="/polyflex/examples/second-page">2</a>
+			<a tabindex="0" href="/polyflex/examples/second-page#dva">2</a>
 			<a tabindex="0" href="/polyflex/examples/third-page">3</a>
 			<a tabindex="0" href="/polyflex/examples/fourth-page/a">4</a>
 			<a tabindex="0" href="/polyflex/examples/fourth-page/b?a=1&amp;b=2#c=3">5</a>
@@ -94,13 +98,13 @@
 			<a tabindex="0" href="/polyflex/examples/fifth-page">7</a>
 		</div>
 		<view-stack name="view-stack-element" debug resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
-			<ajax-container class="ac" name="jedan" route="Route.FIRST_PAGE" style="width: 800px; height: 900px;"><span name=jedan">1</span></ajax-container>
-			<ajax-container class="ac" name="dva" route="Route.SECOND_PAGE">2</ajax-container>
-			<ajax-container class="ac" name="tri" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
-			<ajax-container class="ac" name="cetiri" route="Route.FOURTH_PAGE">4</ajax-container>
-			<ajax-container class="ac" name="pet" route="Route.FOURTH_PAGE">5</ajax-container>
-			<ajax-container class="ac" name="sest" route="Route.FOURTH_PAGE">6</ajax-container>
-			<ajax-container class="ac" name="sedam" route="Route.FIFTH_PAGE">7</ajax-container>
+			<ajax-container class="ac" name="jedan2" route="Route.FIRST_PAGE" style="width: 800px; height: 1900px;"><span name="jedan">1</span></ajax-container>
+			<ajax-container class="ac" name="dva2" route="Route.SECOND_PAGE"><span class="dva" style="margin-top: 20px; position: absolute; top: 300px;" name="dva">2</span></ajax-container>
+			<ajax-container class="ac" name="tri2" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
+			<ajax-container class="ac" name="cetiri2" route="Route.FOURTH_PAGE">4</ajax-container>
+			<ajax-container class="ac" name="pet2" route="Route.FOURTH_PAGE">5</ajax-container>
+			<ajax-container class="ac" name="sest2" route="Route.FOURTH_PAGE">6</ajax-container>
+			<ajax-container class="ac" name="sedam2" route="Route.FIFTH_PAGE">7</ajax-container>
 		</view-stack>
 
 		<ajax-container name="osam" url="Route.FOURTH_PAGE">8</ajax-container>

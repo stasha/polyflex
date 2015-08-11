@@ -186,7 +186,7 @@
 						}
 
 						this.updateSize(this.items[this.selectedIndex]);
-					}, 2000);
+					}, 5);
 				},
 				detached: function () {
 					this.items = [];
@@ -275,15 +275,18 @@
 					}
 				},
 				preShown: function (item) {
+					this.debounceDisable(4, this.bodyScrollPosition);
 					item.style.display = "initial";
 					this.callLifecycleFunctions(item, "preShown");
 				},
 				startShowing: function (item) {
+					this.debounceDisable(4, this.bodyScrollPosition);
 					this.callLifecycleFunctions(item, "startShowing");
 					this.updateSize(item);
 				},
 				shown: function (item) {
 					this.callLifecycleFunctions(item, "shown");
+					this.updateWindowScrollPosition();
 				},
 				preHidden: function (item) {
 					this.callLifecycleFunctions(item, "preHidden");

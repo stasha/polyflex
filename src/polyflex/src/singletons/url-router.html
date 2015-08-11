@@ -66,123 +66,57 @@
 					// Registering route not found
 					this.addRoute(Route.ROUTE_NOT_FOUND);
 
-					var cv = document.querySelector(".body");
-					var cvs = this.body.currentStyle || window.getComputedStyle(this.body);
-
 					window.addEventListener('popstate', function (e) {
-
-						var hashScrollPosition = {x: 0, y: 0};
-
-						if ((!e || !e.state) && self.currentRoute) {
-							var hash = self.currentRoute.context.hash;
-							var elm;
-							try {
-								elm = document.querySelector("#" + hash) || document.querySelector('[name="' + hash + '"');
-								if (elm) {
-									hashScrollPosition = self.getOffset(elm);
-								}
-							} catch (err) {
-								// non supported selector
-							}
-
-						}
-						if (!self.enableBackForwardScrollToAnimation) {
-							self.skipScrollToAnimation = true;
-							// triggers scroll end if scrollToEffect is disabled.
-							self.debounce('WINDOW-SCROLL-END', function () {
-								//self.trigger("window", new CustomEvent(Event.SCROLL_END, {detail: obj}));
-							}, 2);
-							return;
-						}
-
+						self.debounceDisable(4, window.lastScrollPosition);
+						// If scrollposition in state is set than we scroll to 
+						// that position.
 						if (e.state && e.state.scrollPosition) {
-							self.lastScrollPosition = e.state.scrollPosition;
+							self.setWindowScrollObject((e.state.scrollPosition));
+
+							// Ignoring scroll to anchor if state scrollPosition is set
+							window.scrollPosition.ignoreAnchors = true;
+
 						} else {
-							self.lastScrollPosition = hashScrollPosition;
+							self.setWindowScrollObject(self.bodyScrollPosition || {x: 0, y: 0});
+							// Enabling scroll to anchor if presented in url and page
+							window.scrollPosition.ignoreAnchors = false;
+
+							self.debounce('SCROLLED-FROM-POPSTATE', function () {
+								self.updateWindowScrollPosition.call(self);
+								//window.scrollPosition.scrollFromPopState = false;
+							}, 10);
 						}
-						self.disableBodyScroll();
 
-						self.debounce('SCROLL-TO', function () {
-							self.scrollFromPopState = true;
-
-							var wp = window.scrollPosition;
-							var obj = (e.state && e.state.scrollPosition) || hashScrollPosition;
-
-
-							if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
-								TweenMax.set(cv, {scrollTo: {x: wp.x, y: wp.y}});
-							}
-
-
-							window.scrollToEffect = TweenMax.to(cv, self.backForwardAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
-									self.debounce("ENABLE-BODY-SCROLL", function () {
-										self.scrollFromPopState = false;
-										self.saveScrollPosition();
-										self.enableBodyScroll();
-									}, 2);
-									//self.trigger("window", new CustomEvent(Event.SCROLL_END, {detail: obj}));
-								}
-							});
-
-
-						}, self.backForwardAnimationDelay);
+						window.scrollPosition.scrollFromPopState = true;
 					});
-
-
 
 					self.saveScrollPosition = function () {
 						self.debounce("SAVE-SCROLL-POSITION-IN-STATE", function () {
-							if (self.currentRoute && !self.scrollFromPopState) {
-								self.currentRoute.context.state.scrollPosition = window.scrollPosition = self.windowScrollPosition;
+							if (self.currentRoute && !window.scrollPosition.scrollFromPopState) {
+								self.currentRoute.context.state.scrollPosition = window.lastScrollPosition = self.bodyScrollPosition;
 								self.currentRoute.context.save();
 							}
-							self.scrollFromPopState = false;
+
+							window.lastScrollPosition = self.bodyScrollPosition;
+							window.scrollPosition.scrollFromPopState = false;
+
 						}, 200);
 					};
 
+//					self.killScrollToEffect = function () {
+//						if (!window.scrollPosition.scrollFromPopState) {
+//							if (window.scrollToEffect && window.scrollToEffect.isActive()) {
+//								window.scrollToEffect.kill();
+//							}
+//
+//						}
+//					}
+
 					// Saving pages scroll position in state object.
 					window.addEventListener(Event.SCROLL, self.saveScrollPosition);
-					//cv.addEventListener(Event.SCROLL, self.saveScrollPosition);
+//					self.fakeBody.addEventListener(Event.SCROLL, self.killScrollToEffect);
 
 
-
-					self.enableBodyScroll = function (e) {
-						self.body.classList.remove("non-scrollable-viewport");
-						var pos = {x: cv.scrollLeft, y: cv.scrollTop};
-						cv.classList.remove("scrollable-viewport");
-						TweenMax.set(window, {scrollTo: {x: pos.x, y: pos.y}});
-						self.bodyIsScrolling = true;
-					};
-
-					self.disableBodyScroll = function (e) {
-						if (self.body.className.indexOf("non-scrollable-viewport") === -1) {
-							self.scrollFromPopState = true;
-							var pos = self.lastScrollPosition = window.scrollPosition;
-							self.body.classList.add("non-scrollable-viewport");
-							cv.classList.add("scrollable-viewport");
-							TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
-							self.bodyIsScrolling = false;
-						}
-					};
-
-
-
-				},
-				scrollToHash: function (ctx) {
-					var elm;
-					if (ctx.hash) {
-						try {
-							elm = document.querySelector("#" + ctx.hash) || document.querySelector('[name="' + ctx.hash + '"');
-							if (elm) {
-								this.enableBodyScroll();
-								this.windowScrollPosition = elm;
-							}
-						} catch (err) {
-							// non supported selector
-						}
-					}
-
-					return elm;
 				},
 				detached: function () {
 					page.stop();
@@ -249,23 +183,21 @@
 					 */
 					page(rt, function (ctx) {
 
+						self.debounceDisable(0);
+
 						var newRoute = extend(true, {}, routes[routeNames[rt]]);
 						newRoute.pattern = rt;
 						newRoute.context = ctx;
 
-						// setting window scroll position
-						var scrp = ctx.state.scrollPosition || {x: 0, y: 0};
-						var wscrp = self.windowScrollPosition;
-						self.debounce('TEST', function () {
-							TweenMax.set(window, {scrollTo: wscrp});
-						}, 0);
-						self.windowScrollPosition = {x: scrp.x, y: scrp.y};
-						self.log("Scrolling window to position: x=" + scrp.x + ", y=" + scrp.y);
-
-						self.scrollToHash.call(self, ctx);
-
-
 						var direction = evaluateNavigationDirection(newRoute, self.lastRoute);
+
+						if (direction === 0) {
+							// setting window scroll position
+							var scrp = ctx.state.scrollPosition || {x: 0, y: 0};
+							self.setWindowScrollObject({x: scrp.x, y: scrp.y, direction: 0});
+						}
+
+						window.scrollPosition.direction = direction;
 
 						// if forward button was clicked than we send event
 						if (direction === -1) {
@@ -310,6 +242,13 @@
 
 						// changing from old route to new route
 						self.lastRoute = self.currentRoute;
+
+						if (!window.scrollPosition.scrollFromPopState) {
+							window.scrollPosition.x = 0;
+							window.scrollPosition.y = 0;
+							self.updateWindowScrollPosition.call(self);
+						}
+
 					});
 
 					page.start({dispatch: false});
