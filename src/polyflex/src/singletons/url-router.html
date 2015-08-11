@@ -65,6 +65,15 @@
 
 					// Registering route not found
 					this.addRoute(Route.ROUTE_NOT_FOUND);
+					
+					// handling document fragmet scrolling
+					document.addEventListener("click", function (e) {
+						if (e.target.href === location.href && location.hash) {
+							self.debounceDisable(4, window.lastScrollPosition);
+							self.updateWindowScrollPosition.call(self);
+							e.preventDefault();
+						}
+					});
 
 					window.addEventListener('popstate', function (e) {
 						self.debounceDisable(4, window.lastScrollPosition);
@@ -97,10 +106,10 @@
 								self.currentRoute.context.save();
 							}
 
-							window.lastScrollPosition = self.bodyScrollPosition;
+//							window.lastScrollPosition = self.bodyScrollPosition;
 							window.scrollPosition.scrollFromPopState = false;
 
-						}, 200);
+						}, 100);
 					};
 
 //					self.killScrollToEffect = function () {

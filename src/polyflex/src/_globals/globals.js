@@ -102,6 +102,7 @@
 	Channel.ROUTE_EXIT = "route_exit";
 	Channel.BROWSER_BACK = "browser_back";
 	Channel.BROWSER_FORWARD = "browser_forward";
+	Channel.WINDOW_SCROLL = "window_scroll";
 
 
 

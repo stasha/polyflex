@@ -5,9 +5,11 @@
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 		var Event = polyflex.Event;
+		var Channel = polyflex.Channel;
 
 
 		window.lastScrollPosition = window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
+		polyflex.preventWindowScrolling = polyflex.preventWindowScrolling || [];
 
 		/**
 		 * Behavior containing core functionality.
@@ -180,7 +182,13 @@
 				return pos;
 			},
 			set windowScrollPosition(obj) {
+				
 				this.disableBodyScroll();
+				
+				//prevent scrolling untill preventScrolling property is not deleted
+				if (polyflex.preventWindowScrolling.length > 0) {
+					return;
+				}
 
 				var self = this;
 				if (this.skipWindowScrollToPosition) {
@@ -188,6 +196,16 @@
 					return;
 				}
 				this.debounce('SCROLL-TO-DELAY', function () {
+
+					// Emitting window scroll mesage so interested parties can 
+					// prevent window from scrolling and pospon it to desired
+					// moment.
+					this.sendMessage({channel: Channel.WINDOW_SCROLL});
+
+					//prevent window scrolling untill preventWindowScrolling property is not deleted
+					if (polyflex.preventWindowScrolling.length > 0) {
+						return;
+					}
 					if (obj) {
 
 						if (typeof obj.getAttribute === "function") {
@@ -195,17 +213,16 @@
 						}
 
 						if (this.base && this.base.enableScrollToAnimation) {
-							var wp = this.windowScrollPosition;
 							// applyes new position to window
 							this.debounce("SCROLL-WINDOW", function () {
 								var cv = document.querySelector(".body");
 
 
 								if (!this.skipScrollToAnimation && !this.scrollFromPopState) {
-									//TweenMax.set(cv, {scrollTo: {x: wp.x, y: wp.y}});
 									window.scrollToEffect = TweenMax.to(cv, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
 											self.debounce('ENABLE-BODY-SCROLL', function () {
 												self.enableBodyScroll();
+												window.lastScrollPosition = self.bodyScrollPosition;
 											}, 5)
 										}});
 								} else {
@@ -220,17 +237,17 @@
 							}, 5);
 						}
 					}
-				}, this.base.scrollToAnimationDelay);
+				}, 100);
 			},
 			get fakeBodyScrollPosition() {
 				var fb = document.querySelector(".body");
 				return extend({}, window.scrollPosition, {x: fb.scrollLeft, y: fb.scrollTop});
 			},
-			get bodyScrollPosition(){
+			get bodyScrollPosition() {
 				var wsp = this.windowScrollPosition;
 				var fbs = this.fakeBodyScrollPosition;
-				
-				if(wsp.x === 0 && wsp.y === 0 && (fbs.x > 0 || fbs.y > 0)){
+
+				if (wsp.x === 0 && wsp.y === 0 && (fbs.x > 0 || fbs.y > 0)) {
 					return extend({}, wsp, fbs);
 				}
 				return extend({}, fbs, wsp);
@@ -258,8 +275,7 @@
 			get urls() {
 				return this.polyflex.urls;
 			},
-			
-			get fakeBody(){
+			get fakeBody() {
 				return document.querySelector(".body");
 			},
 			/**

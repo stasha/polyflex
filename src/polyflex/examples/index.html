@@ -11,38 +11,40 @@ and open the template in the editor.
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<script src="../../bean/bean.js"></script>
 		<script src="../../nerve/nerve.js"></script>
+
+		<style>
+			.nav {
+				position: fixed;
+				top: 20px;
+				left: 20px;
+			}
+			
+			.sections div {
+				margin: 1900px;
+			}
+		</style>
+
 	</head>
 	<body>
-		<div id="jedan">TODO write content</div>
+
+		<div class="nav">
+			<a href="#jedan">jedan</a>
+			<a href="#dva">dva</a>
+			<a href="#tri">tri</a>
+		</div>
+		<div class="sections">
+			<div id="jedan">jedan</div>
+			<div id="dva">dva</div>
+			<div id="tri">tri</div>
+		</div>
 
 		<script>
-			bean.on(jedan, "click", function () {
-				console.log("clicked");
+
+			document.addEventListener("click", function(e){
+				if(e.target.href === location.href && location.hash){
+					console.log(location.hash);
+				}
 			});
-
-			bean.off(jedan);
-
-			nerve.on({
-				channel: "jedan",
-				callback: fun,
-				scope: this
-			});
-
-			function fun(ctx) {
-				console.log(ctx);
-
-			}
-
-			nerve.off({
-				channel: "jedan",
-				scope: this
-			});
-
-			nerve.send({
-				channel: "jedan",
-				context: {obj: "my obj"}
-			});
-
 		</script>
 
 	</body>

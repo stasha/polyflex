@@ -205,7 +205,7 @@
 						console.warn("the selectedIndex: " + newValue + " is out of range!");
 						return;
 					}
-	
+
 					newItem.style.display = "block";
 					var self = this;
 
@@ -275,9 +275,13 @@
 					}
 				},
 				preShown: function (item) {
-					this.debounceDisable(4, this.bodyScrollPosition);
-					item.style.display = "initial";
-					this.callLifecycleFunctions(item, "preShown");
+					
+						this.removePreventWindowScrollingItem();
+						polyflex.preventWindowScrolling.push(this);
+						this.debounceDisable(4, this.bodyScrollPosition);
+						item.style.display = "initial";
+						this.callLifecycleFunctions(item, "preShown");
+					
 				},
 				startShowing: function (item) {
 					this.debounceDisable(4, this.bodyScrollPosition);
@@ -286,10 +290,13 @@
 				},
 				shown: function (item) {
 					this.callLifecycleFunctions(item, "shown");
+					this.removePreventWindowScrollingItem();
 					this.updateWindowScrollPosition();
 				},
 				preHidden: function (item) {
-					this.callLifecycleFunctions(item, "preHidden");
+					this.debounce('PRE-HIDDEN', function(){
+						this.callLifecycleFunctions(item, "preHidden");
+					}, 1);
 				},
 				startHiding: function (item) {
 					this.callLifecycleFunctions(item, "startHiding");
@@ -302,8 +309,14 @@
 					if (typeof item[func] === "function") {
 						item[func].call(item, this.routeContext);
 					}
+				},
+				removePreventWindowScrollingItem: function(){
+					var index = polyflex.preventWindowScrolling.indexOf(this);
+					if (index > -1) {
+						polyflex.preventWindowScrolling.splice(index, 1);
+					}
 				}
-
+				
 
 			});
 
