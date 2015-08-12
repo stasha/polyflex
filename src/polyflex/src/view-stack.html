@@ -275,13 +275,11 @@
 					}
 				},
 				preShown: function (item) {
-					
-						this.removePreventWindowScrollingItem();
-						polyflex.preventWindowScrolling.push(this);
-						this.debounceDisable(4, this.bodyScrollPosition);
-						item.style.display = "initial";
-						this.callLifecycleFunctions(item, "preShown");
-					
+					this.removeWindowScrollBlocker();
+					this.addWindowScrollBlocker();
+					this.debounceDisable(4, this.bodyScrollPosition);
+					item.style.display = "initial";
+					this.callLifecycleFunctions(item, "preShown");
 				},
 				startShowing: function (item) {
 					this.debounceDisable(4, this.bodyScrollPosition);
@@ -290,11 +288,11 @@
 				},
 				shown: function (item) {
 					this.callLifecycleFunctions(item, "shown");
-					this.removePreventWindowScrollingItem();
+					this.removeWindowScrollBlocker();
 					this.updateWindowScrollPosition();
 				},
 				preHidden: function (item) {
-					this.debounce('PRE-HIDDEN', function(){
+					this.debounce('PRE-HIDDEN', function () {
 						this.callLifecycleFunctions(item, "preHidden");
 					}, 1);
 				},
@@ -309,14 +307,7 @@
 					if (typeof item[func] === "function") {
 						item[func].call(item, this.routeContext);
 					}
-				},
-				removePreventWindowScrollingItem: function(){
-					var index = polyflex.preventWindowScrolling.indexOf(this);
-					if (index > -1) {
-						polyflex.preventWindowScrolling.splice(index, 1);
-					}
 				}
-				
 
 			});
 

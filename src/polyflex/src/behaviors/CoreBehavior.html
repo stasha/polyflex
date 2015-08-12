@@ -6,18 +6,15 @@
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 		var Event = polyflex.Event;
 		var Channel = polyflex.Channel;
-
-
 		window.lastScrollPosition = window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
 		polyflex.preventWindowScrolling = polyflex.preventWindowScrolling || [];
-
 		/**
 		 * Behavior containing core functionality.
 		 * 
 		 * @type type
 		 */
 		behaviors.CoreBehavior = {
-			customElements: [behaviors.EventBehavior],
+			customElements: [],
 			isDetached: null,
 			webComponentsReady: null,
 			skipScrollToAnimation: false,
@@ -35,6 +32,7 @@
 				this.isDetached = false;
 				this.dispatchEvent(new CustomEvent("child-added", {bubbles: true, cancelable: true}));
 				this.customElements.push(this);
+				this.cuid = Math.random().toString().replace(".", "");
 			},
 			detached: function () {
 				this.isDetached = true;
@@ -65,7 +63,6 @@
 				}
 
 				var cv = document.querySelector(".body");
-
 				var self = this;
 				self.enableBodyScroll = function (e) {
 					var pos = self.bodyScrollPosition;
@@ -75,7 +72,6 @@
 					self.bodyIsScrolling = true;
 					window.scrollPosition.ignoreAnchors = false;
 				};
-
 				self.debounceDisable = function (delay, position) {
 					var pos = position || window.lastScrollPosition;
 					self.disableBodyScroll(pos);
@@ -85,7 +81,6 @@
 						TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
 					}, delay);
 				};
-
 				self.disableBodyScroll = function (position) {
 					if (self.body.className.indexOf("non-scrollable-viewport") === -1) {
 						//self.scrollFromPopState = true;
@@ -123,7 +118,6 @@
 						elemRect = elm.getBoundingClientRect(),
 						top = -bdy.scrollTop - (elemRect.top - bodyRect.top),
 						left = -bdy.scrollLeft - (elemRect.left - bodyRect.left);
-
 				return {x: left, y: top};
 			},
 			getOffsetWithoutScrollOffset: function (elm, againstElm) {
@@ -182,9 +176,8 @@
 				return pos;
 			},
 			set windowScrollPosition(obj) {
-				
+
 				this.disableBodyScroll();
-				
 				//prevent scrolling untill preventScrolling property is not deleted
 				if (polyflex.preventWindowScrolling.length > 0) {
 					return;
@@ -196,12 +189,11 @@
 					return;
 				}
 				this.debounce('SCROLL-TO-DELAY', function () {
-
+					this.cancelSavingScrollPosition();
 					// Emitting window scroll mesage so interested parties can 
 					// prevent window from scrolling and pospon it to desired
 					// moment.
 					this.sendMessage({channel: Channel.WINDOW_SCROLL});
-
 					//prevent window scrolling untill preventWindowScrolling property is not deleted
 					if (polyflex.preventWindowScrolling.length > 0) {
 						return;
@@ -215,10 +207,28 @@
 						if (this.base && this.base.enableScrollToAnimation) {
 							// applyes new position to window
 							this.debounce("SCROLL-WINDOW", function () {
+
+								this.cancelSavingScrollPosition();
 								var cv = document.querySelector(".body");
-
-
 								if (!this.skipScrollToAnimation && !this.scrollFromPopState) {
+
+									// window last scroll position
+									var wlsp = window.lastScrollPosition;
+									// window current scroll position
+									var wcsp = self.bodyScrollPosition;
+									// prevent scrolling if current scroll position and destination position
+									if (obj.x === wcsp.x && obj.y === wcsp.y) {
+										self.enableBodyScroll();
+										return;
+									}
+
+									// prevent scrolling if last scroll position is not equal to current scroll position
+									if ((wlsp.x !== wcsp.x && wcsp.maxScrollX !== 0) || (wlsp.y !== wcsp.y && wcsp.maxScrollY !== 0)) {
+										self.enableBodyScroll();
+										return;
+									}
+
+									// scroll window to desired position
 									window.scrollToEffect = TweenMax.to(cv, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
 											self.debounce('ENABLE-BODY-SCROLL', function () {
 												self.enableBodyScroll();
@@ -246,22 +256,36 @@
 			get bodyScrollPosition() {
 				var wsp = this.windowScrollPosition;
 				var fbs = this.fakeBodyScrollPosition;
-
+				var fb;
 				if (wsp.x === 0 && wsp.y === 0 && (fbs.x > 0 || fbs.y > 0)) {
-					return extend({}, wsp, fbs);
+					fb = this.fakeBody;
+					return extend({}, wsp, fbs, {maxScrollX: fb.scrollWidth - fb.clientWidth, maxScrollY: fb.scrollHeight - fb.clientHeight});
 				}
-				return extend({}, fbs, wsp);
+
+				fb = this.body;
+				return extend({}, fbs, wsp, {maxScrollX: fb.scrollWidth - fb.clientWidth, maxScrollY: fb.scrollHeight - fb.clientHeight});
 			},
 			updateWindowScrollPosition: function () {
+				this.cancelSavingScrollPosition();
 				this.disableBodyScroll();
-
 				var elm;
 				if (!window.scrollPosition.ignoreAnchors) {
 					elm = this.getElementFromHash();
 					window.scrollPosition.ignoreAnchors = false;
 				}
 				this.windowScrollPosition = (elm && this.getOffsetWithoutScrollOffset(elm)) || window.scrollPosition;
-
+			},
+			cancelSavingScrollPosition: function () {
+				this.cancelDebouncer('SAVE-SCROLL-POSITION-IN-STATE');
+			},
+			addWindowScrollBlocker: function (name) {
+				polyflex.preventWindowScrolling.push(name || this.cuid);
+			},
+			removeWindowScrollBlocker: function (name) {
+				var index = polyflex.preventWindowScrolling.indexOf(name || this.cuid);
+				if (index > -1) {
+					polyflex.preventWindowScrolling.splice(index, 1);
+				}
 			},
 			get polyflex() {
 				return window.polyflex;

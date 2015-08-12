@@ -1,0 +1,124 @@
+<link rel="import" href="../src/behaviors/CoreBehavior.html" />
+<link rel="import" href="../src/behaviors/EventBehavior.html" />
+
+<dom-module id="home-page">
+	<style>
+
+	</style>
+	<template>
+		<content>
+			<form name="home-form" method="post" enctype="multipart/form-data">
+				<input type="text" disabled name="username" />
+				<input type="text" readonly name="lastname" />
+				<input type="text" name="firstname" />
+				<select name="types" multiple>
+					<option value="jedan">jedan</option>
+					<option disabled selected value="dva">jedan</option>
+					<option value="tri">jedan</option>
+				</select>
+				<input type="submit" name="my-submit-button" value="Submit" />
+				<input type="file" name="my-file" />
+				<input type="hidden" name="hidden" value="hidden" />
+			</form>
+		</content>
+	</template>
+
+	<script>
+
+		(function (window, Channel) {
+
+			"use strict";
+
+
+
+			var polyflex = window.polyflex = window.polyflex || {};
+			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+
+
+			Polymer({
+				is: "home-page",
+				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior],
+				preShown: function (item) {
+					console.log("pre shown");
+				},
+				shown: function (item) {
+					console.log("shown");
+				},
+				attached: function () {
+					var self = this;
+					document.addEventListener("submit", function (e) {
+						e.preventDefault();
+						var formObject = self.getFormObject(e.target);
+						var req = request[formObject.method](formObject.action);
+						for(var i in formObject.data){
+							if(formObject.hasOwnProperty(i)){
+								var obj = formObject.data[i];
+								req.field(i, obj);
+							}
+						}
+						for(var i = 0; i < formObject.files.length; ++i){
+							req.attach(formObject.files[i].name, formObject.files[i].value);
+						}
+						req.set('Content-Type', formObject.enctype || 'application/x-www-form-urlencoded');
+						req.end(function(err, success){
+							console.log(err);
+						});
+
+						console.log(formObject);
+					});
+
+
+				},
+				getFormObject: function (form) {
+					var fo = this.getFormData(form, 'object');
+					fo.method = form.method;
+					fo.action = form.action || location.href;
+					fo.enctype = form.enctype;
+					return fo;
+				},
+				convertQueryString: function (str, type) {
+					var pairs = (str || location.search.slice(1)).split('&');
+
+					var result = {};
+					pairs.forEach(function (pair) {
+						pair = pair.split('=');
+						result[pair[0]] = decodeURIComponent(pair[1] || '');
+					});
+					
+					return type === 'json' ? JSON.stringify(result) : result;
+				},
+				getFormData: function (form, type) {
+					var field, s = [];
+					var files = [];
+					if (typeof form === 'object' && form.nodeName === "FORM") {
+						var len = form.elements.length;
+						for (var i = 0; i < len; i++) {
+							field = form.elements[i];
+							if (field.name && !field.disabled) {
+								if (field.type !== 'file' && field.type !== 'reset' && field.type !== 'submit' && field.type !== 'button') {
+									if (field.type === 'select-multiple') {
+										for (var j = form.elements[i].options.length - 1; j >= 0; j--) {
+											if (field.options[j].selected)
+												s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.options[j].value);
+										}
+									} else if ((field.type !== 'checkbox' && field.type !== 'radio') || field.checked) {
+										s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value);
+									}
+								} else if (field.type === 'file' && field.value) {
+									files.push({name: field.name, value: field.value});
+								}
+							}
+						}
+					}
+					
+					var data = s.join('&').replace(/%20/g, '+');
+					if(type === 'json' || type === 'object'){
+						data = this.convertQueryString(data, type);
+					}
+					return {data: data, files: files};
+				}
+			});
+
+		})(window, window.polyflex.Channel);
+	</script>
+</dom-module>

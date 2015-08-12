@@ -68,9 +68,12 @@
 		<link rel="import" href="../src/singletons/polyflex-base.html" />
 		<link rel="import" href="../src/singletons/polyflex-globals-override.html" />
 		<link rel="import" href="my-globals.html" />
+		<link rel="import" href="home-page.html" />
 
 	<my-globals></my-globals>
 	<polyflex-globals-override></polyflex-globals-override>
+	
+	
 
 	<polyflex-base 
 		router-root="/polyflex/examples"
@@ -98,7 +101,7 @@
 			<a tabindex="0" href="/polyflex/examples/fifth-page">7</a>
 		</div>
 		<view-stack name="view-stack-element" debug resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
-			<ajax-container class="ac" name="jedan2" route="Route.FIRST_PAGE" style="width: 800px; height: 1900px;"><span name="jedan">1</span></ajax-container>
+			<home-page class="ac" name="home-page" route="Route.FIRST_PAGE" style="width: 800px; height: 1900px;"></home-page>
 			<ajax-container class="ac" name="dva2" route="Route.SECOND_PAGE"><span class="dva" style="margin-top: 20px; position: absolute; top: 300px;" name="dva">2</span></ajax-container>
 			<ajax-container class="ac" name="tri2" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
 			<ajax-container class="ac" name="cetiri2" route="Route.FOURTH_PAGE">4</ajax-container>

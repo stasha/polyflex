@@ -109,21 +109,12 @@
 //							window.lastScrollPosition = self.bodyScrollPosition;
 							window.scrollPosition.scrollFromPopState = false;
 
-						}, 100);
+						}, 300);
+						
 					};
-
-//					self.killScrollToEffect = function () {
-//						if (!window.scrollPosition.scrollFromPopState) {
-//							if (window.scrollToEffect && window.scrollToEffect.isActive()) {
-//								window.scrollToEffect.kill();
-//							}
-//
-//						}
-//					}
 
 					// Saving pages scroll position in state object.
 					window.addEventListener(Event.SCROLL, self.saveScrollPosition);
-//					self.fakeBody.addEventListener(Event.SCROLL, self.killScrollToEffect);
 
 
 				},
