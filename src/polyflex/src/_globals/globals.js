@@ -102,7 +102,9 @@
 	Channel.ROUTE_EXIT = "route_exit";
 	Channel.BROWSER_BACK = "browser_back";
 	Channel.BROWSER_FORWARD = "browser_forward";
-	Channel.WINDOW_SCROLL = "window_scroll";
+	Channel.BEFORE_SEND = "before_data";
+	Channel.ON_SEND = "on_send";
+	Channel.AFTER_RECEIVE = "after_receive";
 
 
 

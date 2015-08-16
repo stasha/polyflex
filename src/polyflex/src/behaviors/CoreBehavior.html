@@ -13,7 +13,7 @@
 		 * 
 		 * @type type
 		 */
-		behaviors.CoreBehavior = {
+		behaviors.CoreBehaviorImpl = {
 			customElements: [],
 			isDetached: null,
 			webComponentsReady: null,
@@ -365,6 +365,9 @@
 				e.preventDefault();
 			}
 		};
+		
+		behaviors.CoreBehavior = [behaviors.CoreBehaviorImpl];
+		
 	})(window, document);
 
 </script>

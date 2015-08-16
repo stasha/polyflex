@@ -1,0 +1,27 @@
+<link rel="import" href="behaviors/FormBehavior.html" />
+
+
+<dom-module id="ajax-form">
+
+	<script>
+
+		(function (window) {
+
+			"use strict";
+
+			var polyflex = window.polyflex;
+			var behaviors = polyflex.behaviors;
+
+			Polymer({
+				is: "ajax-form",
+				extends: "form",
+				behaviors: [
+					behaviors.FormBehavior
+				],
+				response: function(data){
+					console.log(data);
+				}
+			});
+		})(window);
+	</script>
+</dom-module>

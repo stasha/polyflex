@@ -12,10 +12,10 @@
 		var bean = window.bean;
 		var nerve = window.nerve;
 
-		behaviors.EventBehavior = {
+		behaviors.EventBehaviorImpl = {
 			// global application channel
 			defaultMessageChannel: "channel:" + new Date().getTime(),
-			behaviors: [behaviors.CoreBehavior],
+			behaviors: [],
 			eventRegister: null,
 			messageEventRegister: null,
 			scrollPosition: {x: 0, y: 0},
@@ -296,6 +296,8 @@
 				eventArray = [];
 			}
 		};
+		
+		behaviors.EventBehavior = [behaviors.CoreBehavior, behaviors.EventBehaviorImpl];
 
 	})(window);
 </script>

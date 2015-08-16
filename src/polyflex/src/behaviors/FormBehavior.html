@@ -2,23 +2,228 @@
 	(function (window, document) {
 
 		"use strict";
+
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
-		
-		
-		
+		var Channel = polyflex.Channel;
+
 		/**
-		 * Behavior containing form functionality.
+		 * Form behavior. 
+		 * It should behave as much as possible like a default html form by default.
 		 * 
 		 * @type type
 		 */
-		behaviors.FormBehavior = {
-			
-			
-			
-			
-			
+		behaviors.FormBehaviorImpl = {
+			properties: {
+				/**
+				 * Sets 'Content-Type' header.
+				 * Because form enctype attribute can't be set to 
+				 * application/json than we use 
+				 * this attribute for seting "enctype" on ajax form.
+				 * If contentType and enctype attributes are specified,
+				 * than contentType takes pecedence.
+				 */
+				contentType: {
+					type: String
+				},
+				/**
+				 * Sets Accept header value.
+				 */
+				accept: {
+					type: String
+				}
+			},
+			attached: function () {
+				var self = this;
+
+				// Listening for click event.
+				// If event is triggered by submit button, than we register
+				// this button as submitActuator which is than sent in the form.
+				this.on(this, "click", function (e) {
+					var but = e.target;
+					var type = but.getAttribute("type");
+					if (type === "submit" || type === "image") {
+						e.target.form.submitActuator = {name: but.name, value: but.value};
+					}
+				});
+
+				// Listening for submit event so we can stop it and continue
+				// with ajax post.
+				this.on(this, "submit", function (e) {
+					e.preventDefault();
+
+					/**
+					 * Adding parameters to request based on different arguments.
+					 * 
+					 * @param {type} enctype
+					 * @param {type} request
+					 * @param {type} name
+					 * @param {type} value
+					 * @returns {undefined}
+					 */
+					var addProperty = function (enctype, request, name, value) {
+						switch (enctype) {
+							case 'multipart/form-data':
+								request.field(name, value);
+								break;
+							case 'application/json':
+								var obj = {};
+								obj[name] = value;
+								request.send(obj);
+								break;
+							default:
+								// defaulst to application/x-www-form-urlencoded
+								request.send(name + "=" + value);
+						}
+					};
+
+					// getting form data object from submitted form.
+					var formData = self.getFormObject(e.target);
+
+					// Creating request type that will send our data to server.
+					var req = request[formData.method](formData.action);
+
+					// if form contains files, than content-type is set automatically to multipart/form-data,
+					// for other types we set type manually.
+					if (formData.files.length === 0) {
+						req.set('Content-Type', self.contentType || formData.enctype);
+					}
+
+					// Getting button (actuator) what submitted the form.
+					var actuator = e.target.submitActuator;
+
+					// Adding buttons name/value pair to form data.
+					if (actuator) {
+						formData.data[actuator.name] = actuator.value;
+					}
+
+					// deleting submit actuator
+					delete e.target.submitActuator;
+
+					// Sending message to all interested parties so 
+					// they can modify request before it is processed and sent.
+					self.sendMessage({
+						channel: Channel.BEFORE_SEND,
+						route: formData.action,
+						context: {request: req, formData: formData}
+					});
+
+					// Attaching only data name/value pairs to request
+					for (var i in formData.data) {
+						if (formData.data.hasOwnProperty(i)) {
+							var obj = formData.data[i];
+							if (Object.prototype.toString.call(obj) === '[object Array]') {
+								for (var n = 0; n < obj.length; ++n) {
+									addProperty(formData.enctype, req, i, obj[n]);
+								}
+							} else {
+								addProperty(formData.enctype, req, i, obj);
+							}
+						}
+					}
+
+					// we attach files to request only if form's enctype is 
+					// set to 'multipart/form-data'.
+					if (formData.enctype === 'multipart/form-data') {
+						for (var i = 0; i < formData.files.length; ++i) {
+							var f = formData.files[i];
+							req.attach(f.name, f.value[0], f.file);
+						}
+					} else if (formData.files.length > 0) {
+						// we log warn message if there are files in the form
+						// but form is not set to multipart/form-data.
+						console.warn(formData.files.length + " files won't be sent to the server because forms enctype is not set to \"multipart/form-data\"");
+					}
+
+
+					// Sends request
+					req.end(function (err, response) {
+
+						// data object that will be sent in the message or passed as parameter.
+						var data = {error: err, response: response, request: req, formData: formData};
+
+						// Sending message with request data
+						self.sendMessage({
+							channel: Channel.AFTER_RECEIVE,
+							route: formData.action,
+							context: data
+						});
+
+						// If this object has method response, than we call
+						// it automatically.
+						if (typeof self.response === 'function') {
+							self.response.call(self, data);
+						}
+					});
+
+					// Sneds message to all registered parties that request
+					// has ben sent and is in progress state.
+					self.sendMessage({
+						channel: Channel.ON_SEND,
+						route: formData.action,
+						context: {request: req, formData: formData}
+					});
+
+				});
+			},
+			getFormObject: function (form) {
+				var fo = this.getFormData(form, 'object');
+				fo.method = form.method;
+				fo.action = form.action || location.href;
+				fo.enctype = form.enctype;
+				return fo;
+			},
+			convertQueryString: function (str, type) {
+				var pairs = (str || location.search.slice(1)).split('&');
+				var result = {};
+				pairs.forEach(function (pair) {
+					pair = pair.split('=');
+					if (!result.hasOwnProperty([pair[0]])) {
+						result[pair[0]] = decodeURIComponent(pair[1] || '');
+					} else {
+						if (Object.prototype.toString.call(result[pair[0]]) !== '[object Array]') {
+							var res = result[pair[0]];
+							result[pair[0]] = [res];
+						}
+						result[pair[0]].push(pair[1]);
+					}
+				});
+				return type === 'json' ? JSON.stringify(result) : result;
+			},
+			getFormData: function (form, type) {
+				var field, s = [];
+				var files = [];
+				if (typeof form === 'object' && form.nodeName === "FORM") {
+					var len = form.elements.length;
+					for (var i = 0; i < len; i++) {
+						field = form.elements[i];
+						if (field.name && !field.disabled) {
+							if (field.type !== 'file' && field.type !== 'reset' && field.type !== 'submit' && field.type !== 'button') {
+								if (field.type === 'select-multiple') {
+									for (var j = form.elements[i].options.length - 1; j >= 0; j--) {
+										if (field.options[j].selected && !field.options[j].disabled)
+											s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.options[j].value);
+									}
+								} else if ((field.type !== 'checkbox' && field.type !== 'radio') || field.checked) {
+									s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value);
+								}
+							} else if (field.type === 'file' && field.value) {
+								files.push({name: field.name, value: field.files, file: field.value});
+							}
+						}
+					}
+				}
+
+				var data = s.join('&').replace(/%20/g, '+');
+				if (type === 'json' || type === 'object') {
+					data = this.convertQueryString(data, type);
+				}
+				return {data: data, files: files};
+			}
 		};
+
+		behaviors.FormBehavior = [behaviors.EventBehavior, behaviors.FormBehaviorImpl];
+
 	})(window, document);
 
 </script>
