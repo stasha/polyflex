@@ -7,10 +7,12 @@
 	</style>
 	<template>
 		<content>
-			<form is="ajax-form" accept="application/json" id="home-form" name="home-form"  method="post" enctype="text/html" action="http://localhost:4567/data">
-				<input type="text" disabled name="username" />
-				<input type="text" readonly name="lastname" />
-				<input type="text" name="firstname" />
+			<form is="ajax-form" accept="application/json" id="home-form" name="home-form"  method="put" enctype="application/json" action="http://localhost:4567/data">
+				<div class="user">
+					<input type="text" disabled name="username" />
+					<input type="text" readonly name="lastname" />
+					<input type="text" name="firstname" />
+				</div>
 				<select name="types" multiple>
 					<option value="jedan">jedan</option>
 					<option disabled selected value="dva">dva</option>
@@ -21,9 +23,9 @@
 				<input type="file" name="my-file2" />
 				<input type="file" name="my-file3" />
 				<input type="hidden" name="hidden" value="hidden" />
-				
+
 			</form>
-				<input type="submit" form="home-form" name="external-submit-button" value="Submit" />
+			<input type="submit" form="home-form" name="external-submit-button" value="Submit" />
 		</content>
 	</template>
 

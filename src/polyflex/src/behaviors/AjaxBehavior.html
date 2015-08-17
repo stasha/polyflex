@@ -7,6 +7,7 @@
 
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+		var Channel = polyflex.Channel;
 
 		var request = window.request;
 
@@ -61,66 +62,108 @@
 					return this.getBase() + url;
 				}
 			},
-			/**
-			 * Performs get request.
-			 * 
-			 * @param {type} options
-			 * @returns {undefined}
-			 */
-			get: function (options) {
-				var req = this.buildRequest("get", options.url);
-				req.query(options.data);
-				req.query(options.query);
-				this.send(req, options);
-			},
-			/**
-			 * Performs post request.
-			 * 
-			 * @param {type} options
-			 * @returns {undefined}
-			 */
-			post: function (options) {
-				var req = this.buildRequest("post", options.url);
-			},
-			/**
-			 * Performs put request.
-			 * 
-			 * @param {type} options
-			 * @returns {undefined}
-			 */
-			put: function (options) {
-				var req = this.buildRequest("put", options.url);
-			},
-			/**
-			 * Performs delete request.
-			 * 
-			 * @param {type} options
-			 * @returns {undefined}
-			 */
-			del: function (options) {
-				var req = this.buildRequest("del", options.url);
-			},
-			/**
-			 * Creates request object based on passed parameters.
-			 * 
-			 * @param {type} method
-			 * @param {type} url
-			 * @returns {unresolved}
-			 */
-			buildRequest: function (method, url) {
-				return request[method](this.buildUrl(url));
-			},
-			/**
-			 * Performs request and invokes callback if any.
-			 * 
-			 * @param {type} req
-			 * @param {type} options
-			 * @returns {undefined}
-			 */
-			send: function (req, options) {
-				req.end(function (error, response) {
-					options.callback.call((options.context || this), error, response);
+			send: function (formData) {
+				var self = this;
+				// Creating request type that will send our data to server.
+				var req = request[formData.method](formData.action);
+
+				// if form contains files, than content-type is set automatically to multipart/form-data,
+				// for other types we set type manually.
+				if (formData.files.length === 0) {
+					req.set('Content-Type', formData.enctype);
+				}
+
+				
+
+				// Sending message to all interested parties so 
+				// they can modify request before it is processed and sent.
+				this.sendMessage({
+					channel: Channel.BEFORE_SEND,
+					route: formData.action,
+					context: {request: req, formData: formData}
 				});
+
+
+				/**
+				 * Adding parameters to request based on different arguments.
+				 * 
+				 * @param {type} name
+				 * @param {type} value
+				 * @returns {undefined}
+				 */
+				var addProperty = function (name, value) {
+					switch (formData.enctype) {
+						case 'multipart/form-data':
+							req.field(name, value);
+							break;
+						case 'application/json':
+							var obj = {};
+							obj[name] = value;
+							req.send(obj);
+							break;
+						default:
+							// defaulst to application/x-www-form-urlencoded
+							req.send(name + "=" + value);
+					}
+				};
+
+
+				// Attaching only data name/value pairs to request
+				for (var i in formData.data) {
+					if (formData.data.hasOwnProperty(i)) {
+						var obj = formData.data[i];
+						if (Object.prototype.toString.call(obj) === '[object Array]') {
+							for (var n = 0; n < obj.length; ++n) {
+								addProperty(i, obj[n]);
+							}
+						} else {
+							addProperty(i, obj);
+						}
+					}
+				}
+
+				// we attach files to request only if form's enctype is 
+				// set to 'multipart/form-data'.
+				if (formData.enctype === 'multipart/form-data') {
+					for (var i = 0; i < formData.files.length; ++i) {
+						var f = formData.files[i];
+						req.attach(f.name, f.value[0], f.file);
+					}
+				} else if (formData.files.length > 0) {
+					// we log warn message if there are files in the form
+					// but form is not set to multipart/form-data.
+					console.warn(formData.files.length + " files won't be sent to the server because forms enctype is not set to \"multipart/form-data\"");
+				}
+
+
+				// Sends request
+				req.end(function (err, response) {
+
+					// data object that will be sent in the message or passed as parameter.
+					var data = {error: err, response: response, request: req, formData: formData};
+
+					// Sending message with request data
+					self.sendMessage({
+						channel: Channel.AFTER_RECEIVE,
+						route: formData.action,
+						context: data
+					});
+
+					// If this object has method response, than we call
+					// it automatically.
+					if (typeof self.response === 'function') {
+						self.response.call(self, data);
+					}
+				});
+
+				// Sneds message to all registered parties that request
+				// has ben sent and is in progress state.
+				self.sendMessage({
+					channel: Channel.ON_SEND,
+					route: formData.action,
+					context: {request: req, formData: formData}
+				});
+
 			}
 		};
 
