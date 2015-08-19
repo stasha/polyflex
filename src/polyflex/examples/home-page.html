@@ -51,6 +51,12 @@
 					console.log("shown");
 				},
 				attached: function () {
+					this.onMessage({
+						channel: Channel.BEFORE_SEND,
+						callback: function(data){
+							console.log(data);
+						}
+					})
 				}
 			});
 
