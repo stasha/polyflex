@@ -6,12 +6,12 @@
     "**/*.txt"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.0",
+    "polymer": "Polymer/polymer#^1.1.0",
     "gsap": "~1.17.0",
     "superagent": "stasha/superagent#~1.2.7",
     "page": "stasha/page.js#~1.6.5",
     "bean": "~1.0.14",
-    "nerve": "stasha/nerve#^1.0.7",
+    "nerve": "stasha/nerve#^1.0.9",
     "extend.js": "borayazilim/extend.js"
   },
   "devDependencies": {}
