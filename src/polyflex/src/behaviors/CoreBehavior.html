@@ -233,7 +233,10 @@
 											self.debounce('ENABLE-BODY-SCROLL', function () {
 												self.enableBodyScroll();
 												window.lastScrollPosition = self.bodyScrollPosition;
-											}, 5)
+												if(self.router){
+													self.router.saveScrollPosition();
+												}
+											}, 5);
 										}});
 								} else {
 									TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
@@ -302,6 +305,9 @@
 			get fakeBody() {
 				return document.querySelector(".body");
 			},
+			get router(){
+				return document.querySelector("url-router");
+			},
 			/**
 			 * Looks up for an object based on passed string path.
 			 * Path example: "foo.bar.baz".
@@ -365,9 +371,9 @@
 				e.preventDefault();
 			}
 		};
-		
+
 		behaviors.CoreBehavior = [behaviors.CoreBehaviorImpl];
-		
+
 	})(window, document);
 
 </script>

@@ -33,11 +33,13 @@
 
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+			var _routes = polyflex._routes;
+			var Route = polyflex.Route;
 
 
 			Polymer({
 				is: "view-stack",
-				behaviors: [behaviors.CoreBehavior, behaviors.EventBehavior, behaviors.RoutingBehavior],
+				behaviors: [behaviors.EventBehavior, behaviors.RoutingBehavior],
 				items: null,
 				routeContext: null,
 				_lastSelectedIndex: 0,
@@ -232,7 +234,7 @@
 						}
 					} else {
 						this.preShown(newItem);
-						this.updateSize(newItem);
+						//this.updateSize(newItem);
 					}
 
 
@@ -248,7 +250,7 @@
 					} else {
 						self.startShowing.call(self, newItem);
 						self.shown.call(self, newItem);
-						self.updateSize(newItem);
+						//self.updateSize(newItem);
 					}
 
 					this._lastSelectedIndex = oldValue;
@@ -269,6 +271,7 @@
 				updateSize: function (item) {
 					if (this.resizeToContent && item) {
 						this.debounce("RESIZE-ITEM", function () {
+							//TODO update resizing to use TweenMax
 							this.style.width = item.offsetWidth + "px";
 							this.style.height = item.offsetHeight + "px";
 						}, 1);
@@ -284,10 +287,11 @@
 				startShowing: function (item) {
 					this.debounceDisable(4, this.bodyScrollPosition);
 					this.callLifecycleFunctions(item, "startShowing");
-					this.updateSize(item);
+					//this.updateSize(item);
 				},
 				shown: function (item) {
 					this.callLifecycleFunctions(item, "shown");
+					this.updateSize(item);
 					this.removeWindowScrollBlocker();
 					this.updateWindowScrollPosition();
 				},
@@ -304,8 +308,38 @@
 					this.callLifecycleFunctions(item, "hidden");
 				},
 				callLifecycleFunctions: function (item, func) {
+					if (item.tagName.toLowerCase() === "element-loader") {
+						if (!item.loadedElement) {
+							if (func === "startShowing") {
+								item.load();
+								var self = this;
+								this.onMessage({
+									channel: Channel.ELEMENT_LOADED,
+									route: item.url,
+									callback: function (e) {
+										e.routeContext = self.routeContext;
+									}
+								});
+							}
+
+							if (item.transitionCallbacks && item.transitionCallbacks.push) {
+								item.transitionCallbacks.push(func);
+							}
+						}
+
+						item = item.loadedElement || item;
+					}
 					if (typeof item[func] === "function") {
-						item[func].call(item, this.routeContext);
+						var route = item.getAttribute("route") || location.href;
+						var rt = Route[route.replace("Route.", "")] || Route[route] || _routes[route];
+						var obj = {item: item, routeContext: this.routeContext, phase: func};
+						this.sendMessage({
+							channel: Channel.TRANSITION_LIFECYCLE,
+							route: rt,
+							context: obj
+						});
+						
+						item[func].call(obj.item, obj.routeContext);
 					}
 				}
 

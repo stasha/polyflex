@@ -139,8 +139,10 @@
 				// Sends request
 				req.end(function (err, response) {
 
-					// data object that will be sent in the message or passed as parameter.
-					var data = {error: err, response: response, request: req, formData: formData};
+					// Data object that will be sent in the message or passed as parameter.
+					// rawResponse should'n be modified by interceptors so other objects that 
+					// depend on rawResponse can continue to function properly.
+					var data = {error: err, response: response, rawResponse: response, request: req, formData: formData};
 
 					// Sending message with request data
 					self.sendMessage({

@@ -105,6 +105,8 @@
 	Channel.BEFORE_SEND = "before_data";
 	Channel.ON_SEND = "on_send";
 	Channel.AFTER_RECEIVE = "after_receive";
+	Channel.ELEMENT_LOADED = "element_loaded";
+	Channel.TRANSITION_LIFECYCLE = "transition_lifecycle";
 
 
 

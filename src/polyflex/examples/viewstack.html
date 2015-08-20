@@ -61,6 +61,10 @@
 			display: block;
 			margin-top: 20px;
 		}
+		
+		.home-page {
+			background: yellow;
+		}
 
 	</style>
 
@@ -102,7 +106,9 @@
 		</div>
 		<view-stack name="view-stack-element" debug resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut" id="vs" style="width: 200px; height: 200px;">
 			<home-page class="ac" name="home-page" route="Route.FIRST_PAGE" style="width: 800px; height: 1900px;"></home-page>
-			<ajax-container class="ac" name="dva2" route="Route.SECOND_PAGE"><span class="dva" style="margin-top: 20px; position: absolute; top: 300px;" name="dva">2</span></ajax-container>
+			<element-loader url="/polyflex/examples/home-page.html" class="ac" name="dva2" route="Route.SECOND_PAGE">
+				<element-loader load-on-start url="/polyflex/examples/home-page.html" class="ac" name="dva2" route="Route.SECOND_PAGE"></element-loader>
+			</element-loader>
 			<ajax-container class="ac" name="tri2" route="Route.THIRD_PAGE" exit-route="Route.FIFTH_PAGE">3</ajax-container>
 			<ajax-container class="ac" name="cetiri2" route="Route.FOURTH_PAGE">4</ajax-container>
 			<ajax-container class="ac" name="pet2" route="Route.FOURTH_PAGE">5</ajax-container>

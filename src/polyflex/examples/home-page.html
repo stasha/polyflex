@@ -39,24 +39,47 @@
 
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+			var Channel = polyflex.Channel;
+			var Route = polyflex.Route;
 
 
 			Polymer({
 				is: "home-page",
 				behaviors: [behaviors.EventBehavior],
-				preShown: function (item) {
+				created: function(){
+					this.onMessage({
+						channel: Channel.TRANSITION_LIFECYCLE,
+						route: Route.DVA,
+						callback: function(e){
+							console.log(e);
+						}
+					});
+				},
+				detached: function(){
+					console.log("removing home-page");
+				},
+				preShown: function (routeContext) {
 					console.log("pre shown");
 				},
-				shown: function (item) {
+				startShowing: function(routeContext) {
+					console.log("start showing");
+				},
+				shown: function (routeContext) {
 					console.log("shown");
 				},
 				attached: function () {
 					this.onMessage({
 						channel: Channel.BEFORE_SEND,
 						callback: function(data){
-							console.log(data);
+							console.log("before send");
 						}
-					})
+					});
+					this.onMessage({
+						channel: Channel.AFTER_RECEIVE,
+						callback: function(data){
+							console.log("after receive");
+						}
+					});
 				}
 			});
 

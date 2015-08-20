@@ -1,0 +1,87 @@
+<dom-module id="element-loader">
+
+	<script>
+
+		(function (document) {
+
+			var polyflex = window.polyflex = window.polyflex || {};
+			var behavior = polyflex.behaviors;
+			var Channel = polyflex.Channel;
+
+			Polymer({
+				is: 'element-loader',
+				behaviors: [behavior.EventBehavior],
+				properties: {
+					url: {
+						type: String
+					},
+					elementName: {
+						type: String
+					},
+					loadOnStart: {
+						type: Boolean,
+						value: false,
+						reflectToAttribute: true,
+						observer: "loadOnStartObserver"
+					},
+					transitionCallbacks: {
+						type: Array,
+						value: []
+					}
+				},
+				loadOnStartObserver: function (newValue) {
+					this.async(function () {
+						if (newValue) {
+							this.load();
+						}
+					});
+				},
+				load: function () {
+					if (!this.loadedElement) {
+						this.debounce('LOAD-ELEMENT', function () {
+							var self = this;
+							this.importHref(this.url, function (e) {
+								var elName = self.elementName || new RegExp("^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))").exec(self.url)[2];
+								self.elementName = self.elementName || elName;
+								var el = self.loadedElement = document.createElement(elName);
+								if (!el) {
+									throw "Could not create element: \"" + elName + "\"";
+								}
+								self.classList.remove("preloader");
+								Polymer.dom(self).appendChild(el);
+								var obj = {element: el};
+								self.sendMessage({
+									channel: Channel.ELEMENT_LOADED,
+									route: self.url,
+									context: obj
+								});
+								if (obj.routeContext) {
+									for(var i = 0; i < self.transitionCallbacks.length; ++i){
+										var func = self.transitionCallbacks[i];
+										if(typeof el[func] === 'function'){
+											el[func](obj.routeContext);
+										}
+									}
+									self.transitionCallbacks = [];
+								}
+							}, function (e) {
+								throw "Loading element from url: \"" + self.url + "\" failed.";
+							});
+
+							this.classList.add("preloader");
+						}, 2);
+					}
+				},
+				cancelLoad: function () {
+					this.cancelDebounce('LOAD-ELEMENT');
+				},
+				unload: function () {
+					if (this.loadedElement) {
+						Polymer.dom(this).removeChild(this.loadedElement);
+						this.loadedElement = null;
+					}
+				}
+			});
+		})(document);
+	</script>
+</dom-module>
