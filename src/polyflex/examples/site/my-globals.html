@@ -1,0 +1,36 @@
+<dom-module id="my-globals">
+
+	<script>
+		
+		(function (window) {
+
+			Polymer({
+				is: "my-globals",
+				created: function () {
+					var polyflex = window.polyflex;
+					var routes = polyflex.routes = polyflex.routes || {};
+
+					routes = extend(routes, {
+						HOME_PAGE: {
+							route: "/index.html"
+						},
+						TWO_COLUMN_1: {
+							route: "/twocolumn1.html"
+						},
+						TWO_COLUMN_2: {
+							route: "/twocolumn2.html"
+						},
+						ONE_COLUMN: {
+							route: "/onecolumn.html"
+						},
+						THREE_COLUMNS: {
+							route: "/threecolumn.html"
+						}
+					});
+					
+					polyflex.update();
+				}
+			});
+		})(window);
+	</script>
+</dom-module>

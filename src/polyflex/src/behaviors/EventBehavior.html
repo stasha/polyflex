@@ -154,6 +154,9 @@
 			 */
 			trigger: function (element, type, args) {
 				//this.checkEvent(type);
+				if(!type){
+					throw "Cant trigger undefined event";
+				}
 				bean.fire(element, type, args);
 			},
 			/**
@@ -218,6 +221,9 @@
 			checkEvent: function (eventsString, type) {
 				if (this.disableEventNameChecking) {
 					return;
+				}
+				if(!eventsString){
+					throw "You can't register " + event + ".";
 				}
 				var events = this.stringToArray(eventsString);
 				for (var i = 0; i < events.length; ++i) {

@@ -5,11 +5,9 @@
 <dom-module id="view-stack">
 	<style>
 		:host {
-			border: 1px solid;
-			display: inline-block;
 			position: relative;
 			overflow: hidden;
-			transition: all 0.2s;
+			display: block;
 		}
 		:host ::content > * {
 			position: absolute;
@@ -17,7 +15,7 @@
 		}
 
 		:host ::content > *.selected {
-
+			/*position: relative;*/
 		}
 
 	</style>
@@ -35,13 +33,16 @@
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 			var _routes = polyflex._routes;
 			var Route = polyflex.Route;
+			var Event = polyflex.Event;
 
 
 			Polymer({
 				is: "view-stack",
 				behaviors: [behaviors.EventBehavior, behaviors.RoutingBehavior],
+				extend: "div",
 				items: null,
 				routeContext: null,
+				_itemIsLoading: false,
 				_lastSelectedIndex: 0,
 				_resizeEffect: null,
 				_showEffect: null,
@@ -83,6 +84,7 @@
 					return this._lastSelectedIndex;
 				},
 				update: function () {
+					var self = this;
 					if (this.isRemoved) {
 						return;
 					}
@@ -94,13 +96,12 @@
 						var item = this.items[i];
 						item.index = i;
 						item.name = i;
-						if (i !== this.selectedIndex) {
-							item.style.display = "none";
-							item.style.opacity = 0;
-						} else {
-							item.style.opacity = 1;
-							item.style.display = "initial";
-						}
+						var he = this._hideEffect.clone();
+						var inSpeed = he.speed;
+						he.speed = 0;
+						he.start(item, this, null, null, function () {
+							he.speed = inSpeed;
+						});
 
 						this.setUrlRouting(item);
 					}
@@ -208,17 +209,36 @@
 						return;
 					}
 
-					newItem.style.display = "block";
 					var self = this;
+					if (newItem.tagName.toLowerCase() === "element-loader" && !newItem.loadedElement) {
+						newItem.on(newItem, Event.ELEMENT_LOADED, function (e) {
+							if (newItem === self.items[self.selectedIndex]) {
+								self.indexChanged.call(self, newValue);
+							}
+						});
+						this._itemIsLoading = true;
+						this.debounce('ADD_PRELOADER', function () {
+							this.classList.add("preloading");
+						}, 1500);
+						newItem.load();
+					} else {
+						this._itemIsLoading = false;
+						this.cancelDebouncer('ADD_PRELOADER');
+						this.classList.remove("preloading");
+					}
 
-					if (this._showEffect) {
+					newItem.style.display = "block";
+
+					if (this._showEffect && !this._itemIsLoading) {
 						this._showEffect.kill();
 					}
 
 					if (typeof oldValue === "number") {
 						var oldItem = this.items[oldValue];
 						self.preHidden.call(self, oldItem);
-						self.preShown.call(self, newItem);
+						if (!this._itemIsLoading) {
+							self.preShown.call(self, newItem);
+						}
 						if (this._hideEffect) {
 							this._hideEffect.start(oldItem, this,
 									function (e) {
@@ -233,69 +253,80 @@
 							self.hidden.call(self, oldItem);
 						}
 					} else {
-						this.preShown(newItem);
+						if (!this._itemIsLoading) {
+							this.preShown(newItem);
+						}
 						//this.updateSize(newItem);
 					}
 
+					if (!this._itemIsLoading) {
+						if (this._showEffect) {
+							this._showEffect.start(newItem, this,
+									function (e) {
+										self.startShowing.call(self, newItem);
+									},
+									null,
+									function (e) {
+										self.shown.call(self, newItem);
+									});
+						} else {
+							self.startShowing.call(self, newItem);
+							self.shown.call(self, newItem);
+							//self.updateSize(newItem);
+						}
 
-					if (this._showEffect) {
-						this._showEffect.start(newItem, this,
-								function (e) {
-									self.startShowing.call(self, newItem);
-								},
-								null,
-								function (e) {
-									self.shown.call(self, newItem);
-								});
-					} else {
-						self.startShowing.call(self, newItem);
-						self.shown.call(self, newItem);
-						//self.updateSize(newItem);
-					}
+						this._lastSelectedIndex = oldValue;
+						var lastSelected = this.items[oldValue];
+						var newSelected = this.items[newValue];
 
-					this._lastSelectedIndex = oldValue;
-					var lastSelected = this.items[oldValue];
-					var newSelected = this.items[newValue];
+						if (lastSelected) {
+							lastSelected.classList.remove("selected");
+							if (lastSelected.classList.length === 0) {
+								lastSelected.removeAttribute("class");
+							}
+						}
 
-					if (lastSelected) {
-						lastSelected.classList.remove("selected");
-						if (lastSelected.classList.length === 0) {
-							lastSelected.removeAttribute("class");
+						if (newSelected) {
+							newSelected.classList.add("selected");
 						}
 					}
-
-					if (newSelected) {
-						newSelected.classList.add("selected");
-					}
 				},
-				updateSize: function (item) {
+				updateSize: function (item, skipAnimation) {
 					if (this.resizeToContent && item) {
 						this.debounce("RESIZE-ITEM", function () {
-							//TODO update resizing to use TweenMax
-							this.style.width = item.offsetWidth + "px";
-							this.style.height = item.offsetHeight + "px";
-						}, 1);
+							if (skipAnimation) {
+								TweenMax.set(this, {width: item.offsetWidth, height: item.offsetHeight});
+							} else {
+								var self = this;
+								TweenMax.to(this, .4, {width: item.offsetWidth, height: item.offsetHeight, onComplete: function () {
+										var cr = self.routeContext && self.routeContext.currentRoute && self.routeContext.currentRoute.context;
+										if (cr && cr.direction === 0) {
+											self.scrollToAnchor();
+										}
+									}
+								});
+							}
+						}, 2);
 					}
 				},
 				preShown: function (item) {
-					this.removeWindowScrollBlocker();
-					this.addWindowScrollBlocker();
-					this.debounceDisable(4, this.bodyScrollPosition);
 					item.style.display = "initial";
 					this.callLifecycleFunctions(item, "preShown");
+					var cr = this.routeContext && this.routeContext.currentRoute && this.routeContext.currentRoute.context;
+					if (cr && cr.direction !== 0) {
+						this.updateSize(item, true);
+					}
 				},
 				startShowing: function (item) {
-					this.debounceDisable(4, this.bodyScrollPosition);
 					this.callLifecycleFunctions(item, "startShowing");
-					//this.updateSize(item);
 				},
 				shown: function (item) {
 					this.callLifecycleFunctions(item, "shown");
 					this.updateSize(item);
-					this.removeWindowScrollBlocker();
-					this.updateWindowScrollPosition();
+//					this.scrollToAnchor();
 				},
 				preHidden: function (item) {
+//					item.style.position = "absolute";
 					this.debounce('PRE-HIDDEN', function () {
 						this.callLifecycleFunctions(item, "preHidden");
 					}, 1);
@@ -338,7 +369,7 @@
 							route: rt,
 							context: obj
 						});
-						
+
 						item[func].call(obj.item, obj.routeContext);
 					}
 				}

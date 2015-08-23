@@ -17,8 +17,6 @@
 			customElements: [],
 			isDetached: null,
 			webComponentsReady: null,
-			skipScrollToAnimation: false,
-			skipWindowScrollToPosition: false,
 			properties: {
 				debug: {
 					type: Boolean,
@@ -56,50 +54,16 @@
 			 */
 			created: function () {
 				this.isDetached = true;
-				try {
-					this.one(window, Event.WEB_COMPONENTS_READY, this.componentsReady);
-				} catch (e) {
-					console.warn("You should implement EventBehavior behavior in this component.");
-				}
-
-				var cv = document.querySelector(".body");
-				var self = this;
-				self.enableBodyScroll = function (e) {
-					var pos = self.bodyScrollPosition;
-					self.body.classList.remove("non-scrollable-viewport");
-					cv.classList.remove("scrollable-viewport");
-					TweenMax.set(window, {scrollTo: {x: pos.x, y: pos.y}});
-					self.bodyIsScrolling = true;
-					window.scrollPosition.ignoreAnchors = false;
-				};
-				self.debounceDisable = function (delay, position) {
-					var pos = position || window.lastScrollPosition;
-					self.disableBodyScroll(pos);
-					TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
-					self.debounce('DEBOUNCE-DISABLE', function () {
-						self.disableBodyScroll(pos);
-						TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
-					}, delay);
-				};
-				self.disableBodyScroll = function (position) {
-					if (self.body.className.indexOf("non-scrollable-viewport") === -1) {
-						//self.scrollFromPopState = true;
-						var pos = position || window.lastScrollPosition;
-						self.body.classList.add("non-scrollable-viewport");
-						cv.classList.add("scrollable-viewport");
-						TweenMax.set(cv, {scrollTo: {x: pos.x, y: pos.y}});
-						self.bodyIsScrolling = false;
-					}
-				};
 			},
-			/**
-			 * Invoked when all webcomponents are ready.
-			 * 
-			 * @returns {undefined}
-			 */
-			componentsReady: function () {
-				this.webComponentsReady = true;
-				console.log("webcomponents ready");
+			scrollToAnchor: function (elm, skipAnimation) {
+				elm = elm || this.getElementFromHash();
+				if (elm) {
+					var pos = this.getOffsetWithoutScrollOffset(elm);
+					if (pos) {
+						pos.skipAnimation = skipAnimation;
+						this.windowScrollPosition = pos;
+					}
+				}
 			},
 			/**
 			 * Returns body element
@@ -113,11 +77,9 @@
 				return document.querySelector("polyflex-base");
 			},
 			getOffset: function (elm, againstElm) {
-				var bdy = againstElm || document.querySelector(".body");
-				var bodyRect = bdy.getBoundingClientRect(),
-						elemRect = elm.getBoundingClientRect(),
-						top = -bdy.scrollTop - (elemRect.top - bodyRect.top),
-						left = -bdy.scrollLeft - (elemRect.left - bodyRect.left);
+				var elemRect = elm.getBoundingClientRect();
+				var top = -window.pageYOffset - elemRect.top;
+				var left = -window.pageXOffset - elemRect.left;
 				return {x: left, y: top};
 			},
 			getOffsetWithoutScrollOffset: function (elm, againstElm) {
@@ -130,15 +92,16 @@
 				var style = elm.currentStyle || window.getComputedStyle(elm);
 				return style;
 			},
-			getElementFromHash: function (context) {
+			getElementFromHash: function (hash) {
 				var elm;
-				var ctx = context || (this.routeContext && this.routeContext.currentRoute && this.routeContext.currentRoute.context);
-				if (!ctx) {
-					ctx = this.currentRoute && this.currentRoute.context;
-				}
-				if (ctx) {
+				hash = hash || location.hash;
+				if (hash) {
+					hash = hash.replace("#", "");
 					try {
-						elm = document.querySelector("#" + ctx.hash) || document.querySelector('[name="' + ctx.hash + '"');
+						elm = document.querySelector("#" + hash)
+								|| document.querySelector('[name="' + hash + '"')
+								|| document.querySelector('[data-id="' + hash + '"')
+								|| document.querySelector('[data-name="' + hash + '"');
 					} catch (err) {
 						// non supported selector
 					}
@@ -160,9 +123,6 @@
 				}
 				return true;
 			},
-			setWindowScrollObject: function (data) {
-				window.scrollPosition = extend(window.scrollPosition || {}, data);
-			},
 			get windowScrollPosition() {
 				var pos = {};
 				if (window.pageYOffset !== undefined) {
@@ -176,119 +136,24 @@
 				return pos;
 			},
 			set windowScrollPosition(obj) {
-
-				this.disableBodyScroll();
-				//prevent scrolling untill preventScrolling property is not deleted
-				if (polyflex.preventWindowScrolling.length > 0) {
-					return;
-				}
-
-				var self = this;
-				if (this.skipWindowScrollToPosition) {
-					this.skipWindowScrollToPosition = false;
-					return;
-				}
-				this.debounce('SCROLL-TO-DELAY', function () {
-					this.cancelSavingScrollPosition();
-					// Emitting window scroll mesage so interested parties can 
-					// prevent window from scrolling and pospon it to desired
-					// moment.
-					this.sendMessage({channel: Channel.WINDOW_SCROLL});
-					//prevent window scrolling untill preventWindowScrolling property is not deleted
-					if (polyflex.preventWindowScrolling.length > 0) {
-						return;
-					}
-					if (obj) {
-
-						if (typeof obj.getAttribute === "function") {
-							obj = this.getOffsetWithoutScrollOffset(obj);
+				this.debounce('SCROLL-TO', function () {
+					if (!obj.skipAnimation) {
+						if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
+							window.scrollToEffect = TweenMax.to(window, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, onComplete: function () {
+									if (obj.hash) {
+										location.hash = obj.hash;
+									}
+								}, ease: Power2.easeOut});
 						}
-
-						if (this.base && this.base.enableScrollToAnimation) {
-							// applyes new position to window
-							this.debounce("SCROLL-WINDOW", function () {
-
-								this.cancelSavingScrollPosition();
-								var cv = document.querySelector(".body");
-								if (!this.skipScrollToAnimation && !this.scrollFromPopState) {
-
-									// window last scroll position
-									var wlsp = window.lastScrollPosition;
-									// window current scroll position
-									var wcsp = self.bodyScrollPosition;
-									// prevent scrolling if current scroll position and destination position
-									if (obj.x === wcsp.x && obj.y === wcsp.y) {
-										self.enableBodyScroll();
-										return;
-									}
-
-									// prevent scrolling if last scroll position is not equal to current scroll position
-									if ((wlsp.x !== wcsp.x && wcsp.maxScrollX !== 0) || (wlsp.y !== wcsp.y && wcsp.maxScrollY !== 0)) {
-										self.enableBodyScroll();
-										return;
-									}
-
-									// scroll window to desired position
-									window.scrollToEffect = TweenMax.to(cv, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, ease: Power2.easeOut, onComplete: function () {
-											self.debounce('ENABLE-BODY-SCROLL', function () {
-												self.enableBodyScroll();
-												window.lastScrollPosition = self.bodyScrollPosition;
-												if(self.router){
-													self.router.saveScrollPosition();
-												}
-											}, 5);
-										}});
-								} else {
-									TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
-								}
-								this.skipScrollToAnimation = false;
-							}, 5);
-						} else {
-							this.debounce("SCROLL-WINDOW", function () {
-								TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
-								this.skipScrollToAnimation = false;
-							}, 5);
+					} else {
+						if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
+							TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
+							if (obj.hash) {
+								location.hash = obj.hash;
+							}
 						}
 					}
-				}, 100);
-			},
-			get fakeBodyScrollPosition() {
-				var fb = document.querySelector(".body");
-				return extend({}, window.scrollPosition, {x: fb.scrollLeft, y: fb.scrollTop});
-			},
-			get bodyScrollPosition() {
-				var wsp = this.windowScrollPosition;
-				var fbs = this.fakeBodyScrollPosition;
-				var fb;
-				if (wsp.x === 0 && wsp.y === 0 && (fbs.x > 0 || fbs.y > 0)) {
-					fb = this.fakeBody;
-					return extend({}, wsp, fbs, {maxScrollX: fb.scrollWidth - fb.clientWidth, maxScrollY: fb.scrollHeight - fb.clientHeight});
-				}
-
-				fb = this.body;
-				return extend({}, fbs, wsp, {maxScrollX: fb.scrollWidth - fb.clientWidth, maxScrollY: fb.scrollHeight - fb.clientHeight});
-			},
-			updateWindowScrollPosition: function () {
-				this.cancelSavingScrollPosition();
-				this.disableBodyScroll();
-				var elm;
-				if (!window.scrollPosition.ignoreAnchors) {
-					elm = this.getElementFromHash();
-					window.scrollPosition.ignoreAnchors = false;
-				}
-				this.windowScrollPosition = (elm && this.getOffsetWithoutScrollOffset(elm)) || window.scrollPosition;
-			},
-			cancelSavingScrollPosition: function () {
-				this.cancelDebouncer('SAVE-SCROLL-POSITION-IN-STATE');
-			},
-			addWindowScrollBlocker: function (name) {
-				polyflex.preventWindowScrolling.push(name || this.cuid);
-			},
-			removeWindowScrollBlocker: function (name) {
-				var index = polyflex.preventWindowScrolling.indexOf(name || this.cuid);
-				if (index > -1) {
-					polyflex.preventWindowScrolling.splice(index, 1);
-				}
+				}, 5);
 			},
 			get polyflex() {
 				return window.polyflex;
@@ -305,7 +170,7 @@
 			get fakeBody() {
 				return document.querySelector(".body");
 			},
-			get router(){
+			get router() {
 				return document.querySelector("url-router");
 			},
 			/**

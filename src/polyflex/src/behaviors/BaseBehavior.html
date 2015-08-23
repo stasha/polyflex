@@ -1,0 +1,133 @@
+<link rel="import" href="CoreBehavior.html" />
+
+<script>
+	(function (window) {
+		
+		
+		// BASE BEHAVIOR
+
+		"use strict";
+
+		var polyflex = window.polyflex = window.polyflex || {};
+		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+		var Event = polyflex.Event;
+
+		var request = window.request;
+
+		if (!request) {
+			throw "AjaxBehavior request is not set!";
+		}
+
+		/**
+		 * !!! BaseBehavior SHOULD BE INCLUDED ONLY ONCE FOR WHOLE APPLICATION !!!
+		 * 
+		 * It is made as behavior so yo can use it and make your own implementation
+		 * of polyflex-base element.
+		 */
+		behaviors.BaseBehaviorImpl = {
+			properties: {
+				routerRoot: {
+					type: String
+				},
+				ajaxRoot: {
+					type: String
+				},
+				enableScrollToAnimation: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				scrollToAnimationSpeed: {
+					type: Number,
+					value: .3
+				},
+				scrollToAnimationDelay: {
+					type: Number,
+					value: 0
+				}
+			},
+			created: function () {
+				window.polyflex.update();
+				this.addComponentReadyListener();
+				this.addAnchorClickedListener();
+			},
+			addComponentReadyListener: function () {
+				window.polyflex.componentsReady = function (e) {
+					console.log("webcomponents ready");
+					TweenMax.to(document.body, 0.7, {opacity: 1});
+					window.removeEventListener(Event.WEB_COMPONENTS_READY, window.polyflex.componentsReady);
+				};
+
+				window.addEventListener(Event.WEB_COMPONENTS_READY, polyflex.componentsReady);
+			},
+			addAnchorClickedListener: function () {
+				var self = this;
+				
+				window.polyflex.scrollToHash = function (e) {
+					
+					var el = e.currentTarget || window;
+					var href = el.href || "";
+
+					if (el.tagName !== "A" && !href) {
+						href = location.href;
+					}
+
+					// if link doesnt have hash we stop processing
+					if (href.indexOf("#") === 0
+							|| href.indexOf(location.hostname) === -1
+							|| href.indexOf("mailto:") > -1
+							|| href.indexOf("tel:") > -1
+							|| (el.hasAttribute && el.hasAttribute('download'))
+							|| (el.getAttribute && el.getAttribute('rel') === 'external')) {
+						return;
+					}
+
+					var getHash = function (href) {
+						var hash = "#";
+						var index = href.indexOf("#");
+						if (index > -1) {
+							hash += href.substring(index + 1);
+						}
+						return hash;
+					};
+
+
+					
+
+					var match = href.replace(location.href, "");
+					if (href === location.href && location.hash) {
+						var hash = location.hash || href.substring(href.indexOf("#") + 1);
+						self.scrollToAnchor.call(self, self.getElementFromHash(hash), el === window);
+						e.preventDefault();
+					} else if (match) {
+						var hash = match;
+						if (match.indexOf("#") > -1) {
+							hash = match.substring(match.indexOf("#") + 1);
+						}
+
+						if (hash) {
+							self.scrollToAnchor.call(self, self.getElementFromHash(hash), el === window);
+						} else {
+							self.windowScrollPosition = {x: 0, y: 0, hash: getHash(href)};
+							e.preventDefault();
+						}
+					} else {
+						self.windowScrollPosition = {x: 0, y: 0, hash: getHash(href)};
+						e.preventDefault();
+					}
+				};
+
+				window.addEventListener("hashchange", function(evt){
+					setTimeout(function(){
+						polyflex.scrollToHash(evt);
+					}, 20);
+				});
+				this.on(document.querySelector("html"), "click", "a", polyflex.scrollToHash);
+			}
+		};
+
+		behaviors.BaseBehavior = [behaviors.EventBehavior, behaviors.BaseBehaviorImpl];
+
+	})(window);
+
+</script>

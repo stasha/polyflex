@@ -7,6 +7,7 @@
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behavior = polyflex.behaviors;
 			var Channel = polyflex.Channel;
+			var Event = polyflex.Event;
 
 			Polymer({
 				is: 'element-loader',
@@ -50,6 +51,7 @@
 								self.classList.remove("preloader");
 								Polymer.dom(self).appendChild(el);
 								var obj = {element: el};
+								self.trigger(self, Event.ELEMENT_LOADED, [obj]);
 								self.sendMessage({
 									channel: Channel.ELEMENT_LOADED,
 									route: self.url,

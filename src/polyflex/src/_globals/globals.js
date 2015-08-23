@@ -135,6 +135,7 @@
 	Event.DRAG_START = "dragstart";
 	Event.DROP = "drop";
 	Event.ERROR = "error";
+	Event.ELEMENT_LOADED = "element_loaded";
 	Event.FOCUS = "focus";
 	Event.FOCUS_IN = "focusin";
 	Event.FOCUS_OUT = "focusout";

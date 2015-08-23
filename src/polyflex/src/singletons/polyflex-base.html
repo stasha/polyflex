@@ -1,6 +1,6 @@
 <link rel="import" href="../../../polymer/polymer.html" />
 <script src="../../../extend.js/extend.js"></script>
-<script src="../../../bean/bean.min.js"></script>
+<script src="../../../bean/bean.js"></script>
 <script src="../../../nerve/nerve.js"></script>
 <script src="../../../page/page.js"></script>
 <script src="../../../superagent/lib/client-browser.js"></script>
@@ -17,6 +17,8 @@
 <link rel="import" href="../fx/fx-resize.html" />
 <link rel="import" href="../ajax-form.html" />
 
+<link rel="import" href="../behaviors/BaseBehavior.html" />
+
 <dom-module id="polyflex-base">
 
 	<template>
@@ -32,54 +34,11 @@
 
 
 	<script>
-	(function (window) {
-		
-		Polymer({
-			is: "polyflex-base",
-			
-			properties: {
-				routerRoot: {
-					type: String
-				},
-				ajaxRoot: {
-					type: String
-				},
-				enableScrollToAnimation: {
-					type: Boolean,
-					value: false,
-					reflectToAttribute: true
-				},
-				scrollToAnimationSpeed: {
-					type: Number,
-					value: .3
-				},
-				scrollToAnimationDelay: {
-					type: Number,
-					value: 0
-				},
-				enableBackForwardScrollToAnimation: {
-					type: Boolean,
-					value: false,
-					reflectToAttribute: true
-				},
-				backForwardAnimationSpeed: {
-					type: Number,
-					value: .3
-				},
-				backForwardAnimationDelay: {
-					type: Number,
-					value: 1000
-				}
-			},
-			created: function(){
-				window.polyflex.update();
-			},
-			ready: function () {
-			},
-			attached: function () {
-				console.log("test");
-			}
-		});
-	})(window);
+(function (window) {
+	Polymer({
+		is: "polyflex-base",
+		behaviors: [window.polyflex.behaviors.BaseBehavior]
+	});
+})(window);
 	</script>
 </dom-module>
