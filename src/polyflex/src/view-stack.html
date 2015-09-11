@@ -384,7 +384,9 @@
 							}
 							if (self.direction === -1 && this._hideEffect.reverseOnBack) {
 								if (this._showEffect) {
-									effect = this._showEffect;
+									effect = this._showEffect.clone();
+									effect.delay = this._hideEffect.delay;
+									effect.ease = this._hideEffect.ease;
 								}
 								effect.backward(item, this,
 										function (e) {
@@ -460,7 +462,9 @@
 							}
 							if (this.direction === -1 && this._showEffect.reverseOnBack) {
 								if (this._hideEffect) {
-									effect = this._hideEffect;
+									effect = this._hideEffect.clone();
+									effect.delay = this._showEffect.delay;
+									effect.ease = this._showEffect.ease;
 								}
 								effect.backward(item, this,
 										function (e) {

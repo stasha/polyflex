@@ -34,13 +34,30 @@
 				},
 				ease: {
 					type: Object,
-					value: Power2.easeOut,
+					value: Power2.easeInOut,
 					obeserver: "setEase"
 				},
 				overwrite: {
 					type: String,
 					value: "all"
+				},
+				scaleFrom: {
+					type: Number,
+					value: 1
+				},
+				scaleTo: {
+					type: Number,
+					value: 1
+				},
+				opacityFrom: {
+					type: Number,
+					value: 1
+				},
+				opacityTo: {
+					type: Number,
+					value: 1
 				}
+				
 			},
 			setEase: function(newValue){
 				if(this.ignoreEaseSetting){

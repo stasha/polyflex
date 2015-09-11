@@ -32,22 +32,36 @@
 					},
 					toZ: {
 						type: Number
+					},
+					perspective: {
+						type: Number
+					},
+					transformOrigin: {
+						type: String,
+						value: "center top"
 					}
+					
 					
 				},
 				start: function (element, context, onStart, onUpdate, onComplete) {
 					this.fromOptions = {
 						rotationX: this.fromX,
 						rotationY: this.fromY,
-						rotationZ: this.fromZ
+						rotationZ: this.fromZ,
+						scale: this.scaleFrom,
+						opacity: this.opacityFrom,
 					};
 					this.toOptions = {
 						rotationX: this.toX,
 						rotationY: this.toY,
-						rotationZ: this.toZ
+						rotationZ: this.toZ,
+						scale: this.scaleTo,
+						opacity: this.opacityTo
 					};
 					
 					this.options = extend({
+						transformPerspective: this.perspective,
+						transformOrigin: this.transformOrigin,
 						delay: this.delay,
 						ease: this.ease,
 						overwrite: this.overwrite,
@@ -67,16 +81,22 @@
 				}, 
 				backward: function (element, context, onStart, onUpdate, onComplete) {
 					this.fromOptions = {
-						rotationX: this.fromX,
-						rotationY: this.fromY,
-						rotationZ: this.fromZ
-					};
-					this.toOptions = {
 						rotationX: this.toX,
 						rotationY: this.toY,
-						rotationZ: this.toZ
+						rotationZ: this.toZ,
+						scale: this.scaleTo,
+						opacity: this.opacityTo
+					};
+					this.toOptions = {
+						rotationX: this.fromX,
+						rotationY: this.fromY,
+						rotationZ: this.fromZ,
+						scale: this.scaleFrom,
+						opacity: this.opacityFrom
 					};
 					this.options = extend({
+						transformPerspective: this.perspective,
+						transformOrigin: this.transformOrigin,
 						delay: this.delay,
 						ease: this.ease,
 						overwrite: this.overwrite,

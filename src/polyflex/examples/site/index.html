@@ -49,8 +49,9 @@
 	<!--		<fx-move id="fadein" from-x="-2500" to-x="0" from-y="-1500" to-y="0" speed="1" reverse-on-back ease="Elastic.easeOut"></fx-move>
 			<fx-move id="fadeout" from-x="0" to-x="2500" from-y="0" to-y="1500" speed="1" reverse-on-back ease="Elastic.easeOut"></fx-move>-->
 	
-			<fx-rotate id="fadein" from-x="-90" to-x="0" from-y="90" to-y="0" from-z="300" to-z="0" speed="1" delay="1" reverse-on-back ease="Cubic.easeOut"></fx-rotate>
-			<fx-rotate id="fadeout" from-x="0" to-x="90" speed="1" reverse-on-back></fx-rotate>
+			<fx-rotate id="fadein"  from-y="-90" to-y="0" opacity-from="0" opacity-to="1" speed="1" delay="1" reverse-on-back perspective="2000"></fx-rotate>
+			<fx-rotate id="fadeout" from-y="0" to-y="90" opacity-from="1" opacity-to="0"  speed="1" reverse-on-back perspective="2000"></fx-rotate>
+			
 
 	<style>
 		html,
