@@ -31,8 +31,26 @@
 
 		></polyflex-base>
 
-	<fx-fade id="fadeIn" to="1" speed="0.5" delay="1"></fx-fade>
-	<fx-fade id="fadeOut" to="0" speed="0.5"></fx-fade>
+<!--			<fx-fade id="fadein" from="0" to="1" speed="0.5" delay="1"></fx-fade>
+			<fx-fade id="fadeout" from="1" to="0" speed="0.5"></fx-fade>-->
+
+	<!--	<fx-move id="fadein" from-y="-1500" to-y="0" speed="1"></fx-move>
+		<fx-move id="fadeout" from-y="0" to-y="-1500" speed="1"></fx-move>
+	
+	-->	<fx-move id="fadein1" from-y="-200" to-y="0" speed="1" reverse-on-back></fx-move>
+	<fx-move id="fadeout1" from-y="0" to-y="200" speed="1" reverse-on-back></fx-move>
+
+<!--		<fx-move id="fadein" from-y="-2500" to-y="0" speed="1" reverse-on-back></fx-move>
+		<fx-move id="fadeout" from-y="0" to-y="2500" speed="1" reverse-on-back></fx-move>-->
+
+<!--	<fx-move id="fadein" from-x="-2500" to-x="0" speed="1" reverse-on-back></fx-move>
+	<fx-move id="fadeout" from-x="0" to-x="2500" speed="1" reverse-on-back></fx-move>-->
+
+	<!--		<fx-move id="fadein" from-x="-2500" to-x="0" from-y="-1500" to-y="0" speed="1" reverse-on-back ease="Elastic.easeOut"></fx-move>
+			<fx-move id="fadeout" from-x="0" to-x="2500" from-y="0" to-y="1500" speed="1" reverse-on-back ease="Elastic.easeOut"></fx-move>-->
+	
+			<fx-rotate id="fadein" from-x="-90" to-x="0" from-y="90" to-y="0" from-z="300" to-z="0" speed="1" delay="1" reverse-on-back ease="Cubic.easeOut"></fx-rotate>
+			<fx-rotate id="fadeout" from-x="0" to-x="90" speed="1" reverse-on-back></fx-rotate>
 
 	<style>
 		html,
@@ -46,18 +64,35 @@
 			/*font-family: arial;*/
 		}
 
+		.header {
+			width: 99.9%;
+			padding: 0;
+		}
+		
+		view-stack .header {
+			display: none;
+		}
+
 		#content {
 			width: 100% !important;
 			min-height: 400px;
+			overflow: hidden;
 		}
 
-		#content > * {
-			width: 100%;
+		#content > *,
+		#content > view-stack > * {
+			width: 100% !important;
 		}
 
 		#footer-wrapper {
 			padding: 50px 0;
 		}
+
+		/*		.menu {
+					min-height: 150px !important;
+				}*/
+
+
 	</style>
 
 
@@ -70,29 +105,70 @@
 				<div class="row">
 					<div class="12u">
 
-						<header id="header">
+<!--												<div class="menu">
+													<header route="/index/(.*)" class="header">
 							<h1><a href="#" id="logo">Minimaxing</a></h1>
 							<nav id="nav">
-								<a href="/polyflex/examples/site/index.html" class="current-page-item">Homepage</a>
-								<a href="/polyflex/examples/site/twocolumn1.html">Two Column #1</a>
-								<a href="/polyflex/examples/site/twocolumn2.html">Two Column #2</a>
-								<a href="/polyflex/examples/site/onecolumn.html">One Column</a>
-								<a href="/polyflex/examples/site/threecolumn.html">Three Column</a>
+								<a href="Route.HOME_PAGE" class="current-page-item">Homepage 1</a>
+								<a href="/twocolumn1.html">Two Column #1 1</a>
+								<a href="Route.TWO_COLUMN_2">Two Column #2 1</a>
+								<a href="/onecolumn.html">One Column 1</a>
 							</nav>
 						</header>
+					</div>-->
+
+						<view-stack show-effect="#fadein1" hide-effect="#fadeout1" resize-to-content>
+							<header route="Route.ANY" class="header">
+								<h1><a href="#" id="logo">Minimaxing</a></h1>
+								<nav id="nav">
+									<a href="Route.HOME_PAGE" class="current-page-item">Homepage 1</a>
+									<a href="/twocolumn1.html">Two Column #1 1</a>
+									<a href="Route.TWO_COLUMN_2">Two Column #2 1</a>
+									<a href="/onecolumn.html">One Column 1</a>
+								</nav>
+							</header>
+							<header route="Route.TWO_COLUMN_1" class="header">
+								<h1><a href="#" id="logo">Minimaxing</a></h1>
+								<nav id="nav">
+									<a href="Route.HOME_PAGE" class="current-page-item">Homepage 1</a>
+									<a href="/twocolumn1.html">Two Column #1 1</a>
+									<a href="Route.TWO_COLUMN_2">Two Column #2 1</a>
+									<a href="/onecolumn.html">One Column 1</a>
+								</nav>
+							</header>
+
+						</view-stack>
 
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<view-stack id="content" name="view-stack-element" debug resize-to-content show-effect="#fadeIn" hide-effect="#fadeOut">
-			<element-loader route="Route.HOME_PAGE" url="pages/home-page.html"></element-loader>
-			<element-loader route="Route.TWO_COLUMN_1" url="pages/twocolumn1-page.html"></element-loader>
+		<view-stack id="home-content" name="view-stack-element" debug resize-to-content show-effect="#fadein" hide-effect="#fadeout">
+			<element-loader route="Route.HOME_PAGE" url="/pages/home-page.html"></element-loader>
+			<element-loader route="Route.TWO_COLUMN_1" url="/pages/twocolumn1-page.html"></element-loader>
 			<twocolumn2-page route="Route.TWO_COLUMN_2"></twocolumn2-page>
 			<onecolumn-page route="Route.ONE_COLUMN"></onecolumn-page>
 			<threecolumn-page route="Route.THREE_COLUMNS"></threecolumn-page>
 		</view-stack>
+
+		<!--		<view-stack id="content" name="view-stack-element" debug resize-to-content show-effect="#fadein" hide-effect="#fadeout">
+					<view-stack id="home-content" route="Route.HOME" name="view-stack-element" debug resize-to-content show-effect="#fadein" hide-effect="#fadeout">
+						<element-loader route="Route.HOME_PAGE" url="/pages/home-page.html"></element-loader>
+						<element-loader route="Route.TWO_COLUMN_1" url="/pages/twocolumn1-page.html"></element-loader>
+						<twocolumn2-page route="Route.TWO_COLUMN_2"></twocolumn2-page>
+						<onecolumn-page route="Route.ONE_COLUMN"></onecolumn-page>
+						<threecolumn-page route="Route.THREE_COLUMNS"></threecolumn-page>
+					</view-stack>
+					<view-stack id="about-content" route="Route.ABOUT_PAGE" name="view-stack-element" debug resize-to-content show-effect="#fadein" hide-effect="#fadeout">
+						<element-loader route="Route.ABOUT_PAGE" url="/pages/home-page.html"></element-loader>
+						<view-stack id="about-me-content" route="Route.ABOUT_ME_PAGE" name="view-stack-element" debug resize-to-content show-effect="#fadein" hide-effect="#fadeout">
+							<element-loader route="Route.ABOUT_ME_PAGE" url="/pages/home-page.html"></element-loader>
+							<element-loader route="Route.TWO_COLUMN_ME_1" url="/pages/twocolumn1-page.html"></element-loader>
+						</view-stack>
+					</view-stack>
+					<div route="Route.ROUTE_NOT_FOUND">PAGE NOT FOUND</div>
+				</view-stack>-->
 
 
 		<div id="footer-wrapper">
@@ -173,7 +249,7 @@
 		</div>
 	</div>
 
-	
+
 
 	<!-- Scripts -->
 	<script src="assets/js/jquery.min.js"></script>

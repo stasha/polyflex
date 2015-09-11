@@ -38,10 +38,13 @@
 					});
 				},
 				load: function () {
-					if (!this.loadedElement) {
+					if (!this.isLoadingElement && !this.loadedElement) {
+						this.isLoadingElement = true;
 						this.debounce('LOAD-ELEMENT', function () {
 							var self = this;
+							self.url = this.router.baseUrl + this.url;
 							this.importHref(this.url, function (e) {
+								self.isLoadingElement = false;
 								var elName = self.elementName || new RegExp("^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))").exec(self.url)[2];
 								self.elementName = self.elementName || elName;
 								var el = self.loadedElement = document.createElement(elName);
@@ -51,7 +54,8 @@
 								self.classList.remove("preloader");
 								Polymer.dom(self).appendChild(el);
 								var obj = {element: el};
-								self.trigger(self, Event.ELEMENT_LOADED, [obj]);
+//								self.trigger(self, Event.ELEMENT_LOADED, [obj]);
+								self.dispatchEvent(new CustomEvent(Event.ELEMENT_LOADED, {detail: obj}));
 								self.sendMessage({
 									channel: Channel.ELEMENT_LOADED,
 									route: self.url,

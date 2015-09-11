@@ -6,6 +6,8 @@
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
 		var Event = polyflex.Event;
 		var Channel = polyflex.Channel;
+		var _routes = polyflex._routes;
+		var Route = polyflex.Route;
 		window.lastScrollPosition = window.scrollPosition = window.scrollPosition || {x: 0, y: 0};
 		polyflex.preventWindowScrolling = polyflex.preventWindowScrolling || [];
 		/**
@@ -56,14 +58,24 @@
 				this.isDetached = true;
 			},
 			scrollToAnchor: function (elm, skipAnimation) {
-				elm = elm || this.getElementFromHash();
-				if (elm) {
-					var pos = this.getOffsetWithoutScrollOffset(elm);
-					if (pos) {
-						pos.skipAnimation = skipAnimation;
-						this.windowScrollPosition = pos;
+				var pos = {x: 0, y: 0};
+				pos.skipAnimation = skipAnimation;
+
+				var ctx = polyflex.routeContext && polyflex.routeContext.currentRoute && polyflex.routeContext.currentRoute.context;
+				if (ctx && ctx.state && ctx.state.direction !== 0) {
+					var ws = polyflex.window.state[polyflex.window.url];
+					if (ws) {
+						pos.x = ws.x;
+						pos.y = ws.y;
 					}
 				}
+
+				if (elm) {
+					pos = this.getOffsetWithoutScrollOffset(elm);
+				}
+
+				this.windowScrollPosition = pos;
+
 			},
 			/**
 			 * Returns body element
@@ -137,23 +149,28 @@
 			},
 			set windowScrollPosition(obj) {
 				this.debounce('SCROLL-TO', function () {
-					if (!obj.skipAnimation) {
+//					TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
+					return;
+					if (obj.skipAnimation !== true) {
 						if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
 							window.scrollToEffect = TweenMax.to(window, this.base.scrollToAnimationSpeed, {scrollTo: {x: obj.x, y: obj.y, autoKill: true}, onComplete: function () {
-									if (obj.hash) {
-										location.hash = obj.hash;
-									}
+									window.scrollTo(obj.x, obj.y);
+//									if (obj.hash) {
+//										location.hash = obj.hash;
+//									};
+									window.dispatchEvent(new CustomEvent(Event.SCROLL_END));
 								}, ease: Power2.easeOut});
 						}
 					} else {
 						if (!window.scrollToEffect || !window.scrollToEffect.isActive()) {
 							TweenMax.set(window, {scrollTo: {x: obj.x, y: obj.y}});
-							if (obj.hash) {
-								location.hash = obj.hash;
-							}
+//							if (obj.hash) {
+//								location.hash = obj.hash;
+//							}
+							window.dispatchEvent(new CustomEvent(Event.SCROLL_END));
 						}
 					}
-				}, 5);
+				}, 1000);
 			},
 			get polyflex() {
 				return window.polyflex;
@@ -172,6 +189,11 @@
 			},
 			get router() {
 				return document.querySelector("url-router");
+			},
+			getRoute: function (route) {
+				if (typeof route === 'string') {
+					return Route[route.replace("Route.", "")] || Route[route] || _routes[route] || route;
+				}
 			},
 			/**
 			 * Looks up for an object based on passed string path.

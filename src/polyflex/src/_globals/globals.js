@@ -20,6 +20,8 @@
 	var _routes = polyflex._routes = polyflex._routes || {};
 	var routeNames = polyflex.routeNames = polyflex.routeNames || {};
 	var messages = polyflex.messages = polyflex.messages || {};
+	polyflex.window = polyflex.window || {};
+	polyflex.window.state = polyflex.window.state || {};
 
 	/**
 	 * Prints object values;
@@ -107,6 +109,7 @@
 	Channel.AFTER_RECEIVE = "after_receive";
 	Channel.ELEMENT_LOADED = "element_loaded";
 	Channel.TRANSITION_LIFECYCLE = "transition_lifecycle";
+	Channel.WINDOW = "window";
 
 
 
@@ -124,9 +127,12 @@
 	Event.DOM_SUBTREE_MODIFIED = "DOMSubtreeModified";
 	Event.ABORT = "abort";
 	Event.BLUR = "blur";
+	Event.BEFORE_BODY_RESIZED = "before_body_resized";
+	Event.BODY_RESIZED = "body_resized";
 	Event.CHANGE = "change";
 	Event.CLICK = "click";
 	Event.DBL_CLICK = "dblclick";
+	Event.DISPLAY_ELEMENT = "display_element";
 	Event.DRAG = "drag";
 	Event.DRAG_END = "dragend";
 	Event.DRAG_ENTER = "dragenter";
@@ -139,6 +145,9 @@
 	Event.FOCUS = "focus";
 	Event.FOCUS_IN = "focusin";
 	Event.FOCUS_OUT = "focusout";
+	Event.INDEX_CHANGED = "index_changed";
+	Event.ELEMENT_HIDE = "element_hide";
+	Event.ELEMENT_SHOW = "element_show";
 	Event.KEY_DOWN = "keydown";
 	Event.KEY_PRESS = "keypress";
 	Event.KEY_UP = "keyup";
@@ -152,8 +161,10 @@
 	Event.READY = "ready";
 	Event.RESET = "reset";
 	Event.RESIZE = "resize";
+	Event.ROUTE_FOUND = "route_found";
 	Event.SCROLL = "scroll";
 	Event.SCROLL_END = "scrollend";
+	Event.SIZE_UPDATED = "size_updated";
 	Event.SELECT = "select";
 	Event.SUBMIT = "submit";
 	Event.TOUCH_CANCEL = "touchcancel";

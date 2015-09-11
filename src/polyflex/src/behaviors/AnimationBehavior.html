@@ -14,19 +14,10 @@
 		 * services.
 		 */
 		behaviors.AnimationBehavior = {
-			tween: null,
 			provider: tweenEngine,
 			properties: {
 				element: {
 					type: Object
-				},
-				from: {
-					type: Number,
-					value: 0
-				},
-				to: {
-					type: Number,
-					value: 1
 				},
 				speed: {
 					type: Number,
@@ -35,6 +26,31 @@
 				delay: {
 					type: Number,
 					value: 0
+				},
+				reverseOnBack: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true
+				},
+				ease: {
+					type: Object,
+					value: Power2.easeOut,
+					obeserver: "setEase"
+				},
+				overwrite: {
+					type: String,
+					value: "all"
+				}
+			},
+			setEase: function(newValue){
+				if(this.ignoreEaseSetting){
+					this.ignoreEaseSetting = false;
+					return;
+				}
+				if(newValue && typeof newValue === "string"){
+					var splitted = newValue.split(".");
+					this.ease = window[splitted[0]][splitted[1]];
+					this.ignoreEaseSetting = true;
 				}
 			},
 			start: function () {
@@ -62,7 +78,7 @@
 				this.tween && this.tween.kill();
 			},
 			clone: function () {
-				return extend(true, this);
+				return this.cloneNode(true);
 			}
 		};
 

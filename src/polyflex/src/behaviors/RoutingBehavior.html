@@ -9,6 +9,8 @@
 
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+		var Route = polyflex.Route;
+		var _routes = polyflex._routes;
 		var Channel = polyflex.Channel;
 
 		/**
@@ -124,6 +126,7 @@
 			isUrlMatching: function (urlPattern, urlPath) {
 				var pattern = urlPattern || this.rt;
 				if (pattern) {
+					pattern = Route[pattern.replace("Route.", "")] || Route[pattern] || _routes[pattern] || pattern;
 					var ctx = new page.Context(urlPath || page.current);
 					var rt = new page.Route(pattern);
 					if (rt.match(ctx.path, ctx.params)) {

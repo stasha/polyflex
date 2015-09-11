@@ -2,14 +2,16 @@
 
 <script>
 	(function (window) {
-		
-		
+
+
 		// BASE BEHAVIOR
 
 		"use strict";
 
 		var polyflex = window.polyflex = window.polyflex || {};
 		var behaviors = polyflex.behaviors = polyflex.behaviors || {};
+		var Route = polyflex.Route;
+		var _routes = polyflex._routes;
 		var Event = polyflex.Event;
 
 		var request = window.request;
@@ -50,6 +52,128 @@
 				window.polyflex.update();
 				this.addComponentReadyListener();
 				this.addAnchorClickedListener();
+				var self = this;
+				var windowState = {};
+				var body = document.body;
+				var html = document.documentElement;
+
+
+				self.gscroll = self.gscroll || function () {
+					if (!self.stopScrollMonitor && !(window.scrollToEffect && window.scrollToEffect.isActive())) {
+						self.debounce('GSCROLL', function () {
+							windowState = {
+								x: window.pageXOffset,
+								y: window.pageYOffset,
+								width: Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth),
+								height: Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight)
+							};
+							polyflex.window.state[polyflex.window.url] = windowState;
+						}, 500);
+					}
+
+				};
+
+				window.addEventListener("scroll", self.gscroll);
+				window.addEventListener(Event.SCROLL_END, self.gscroll);
+//				window.addEventListener("hashchange", function (evt) {
+////					for (var i = 0; i < 10; ++i) {
+////						setTimeout(function () {
+////							if (self.wo) {
+////								TweenMax.set(window, {scrollTo: {x: self.wo.x, y: self.wo.y}});
+////							}
+////						}, i);
+////					}
+//					setTimeout(function () {
+//						if (!self.stopScrollMonitor) {
+//							polyflex.scrollToHash(evt);
+//						}
+//					}, 20);
+//				});
+
+				window.addEventListener("popstate", function () {
+
+//					document.documentElement.style.overflow = "hidden";
+
+					self.stopScrollMonitor = true;
+					var wo = self.wo = self.wo || polyflex.window.state[polyflex.window.url];
+
+
+//					self.scroll = self.scroll || function () {
+//						setTimeout(function () {
+//							window.removeEventListener("scroll", self.scroll);
+//						}, 2);
+//
+//						if (self.wo) {
+//							TweenMax.set(window, {scrollTo: {x: self.wo.x, y: self.wo.y}});
+//							window.scrollTo(self.wo.x, self.wo.y);
+//						}
+//
+////						for (var i = 0; i < 10; ++i) {
+////							setTimeout(function () {
+////								if (self.wo) {
+////									TweenMax.set(window, {scrollTo: {x: self.wo.x, y: self.wo.y}});
+////								}
+////							}, i);
+////						}
+//					};
+
+//					window.addEventListener("scroll", self.scroll);
+
+
+//					self.sendMessage({channel: Channel.WINDOW, route: Event.BEFORE_BODY_RESIZED});
+
+//					document.body.style.width = wo.width + "px";
+//					document.body.style.position = "fixed";
+//					document.body.style.marginTop = -wo.y + "px";
+//					document.body.style.height = 10000 + "px";
+//					document.body.style.overflow = "hidden";
+//					document.body.style.left = "0px";
+//					document.body.style.right = "17px";
+//					document.body.style.display = "none";
+
+//					self.sendMessage({channel: Channel.WINDOW, route: Event.BODY_RESIZED});
+
+
+					if (self.wo) {
+						window.scrollTo(self.wo.x, self.wo.y);
+						TweenMax.set(window, {scrollTo: {x: self.wo.x, y: self.wo.y}});
+					}
+//					for (var i = 0; i < 5; ++i) {
+//						setTimeout(function () {
+//							if (self.wo) {
+////								window.scrollTo(self.wo.x, self.wo.y);
+//								TweenMax.set(window, {scrollTo: {x: self.wo.x, y: self.wo.y}});
+//							}
+//						}, i);
+//					}
+
+
+					setTimeout(function () {
+//						document.body.style.display = "block";
+//						document.body.style.opacity = 0;
+//						document.body.style.visibility = "hidden";
+//						document.body.style.marginTop = 0 + "px";
+//						document.body.style.position = "static";
+
+
+
+
+//							var wo = polyflex.window.state[polyflex.window.url];
+//							if (wo) {
+//								TweenMax.set(window, {scrollTo: {x: wo.x, y: wo.y}});
+//							}
+
+						setTimeout(function () {
+//							setTimeout(function () {
+							delete self.stopScrollMonitor;
+							delete self.wo;
+							document.body.style.width = "auto";
+							document.body.style.height = "auto";
+//								document.documentElement.style.overflow = "auto";
+//							}, 120);
+						}, 20);
+					}, 5000);
+				});
 			},
 			addComponentReadyListener: function () {
 				window.polyflex.componentsReady = function (e) {
@@ -62,14 +186,21 @@
 			},
 			addAnchorClickedListener: function () {
 				var self = this;
-				
+
 				window.polyflex.scrollToHash = function (e) {
-					
+
 					var el = e.currentTarget || window;
 					var href = el.href || "";
 
 					if (el.tagName !== "A" && !href) {
 						href = location.href;
+					}
+
+					var attrHref = e.target.getAttribute("href") || href;
+					attrHref = Route[attrHref.replace("Route.", "")] || Route[attrHref] || _routes[attrHref] || attrHref;
+
+					if (attrHref.indexOf("/") === 0 && attrHref.indexOf("//") === -1 && attrHref.indexOf(self.routerRoot) === -1) {
+						e.target.href = href = self.routerRoot + attrHref;
 					}
 
 					// if link doesnt have hash we stop processing
@@ -92,7 +223,7 @@
 					};
 
 
-					
+
 
 					var match = href.replace(location.href, "");
 					if (href === location.href && location.hash) {
@@ -117,11 +248,6 @@
 					}
 				};
 
-				window.addEventListener("hashchange", function(evt){
-					setTimeout(function(){
-						polyflex.scrollToHash(evt);
-					}, 20);
-				});
 				this.on(document.querySelector("html"), "click", "a", polyflex.scrollToHash);
 			}
 		};

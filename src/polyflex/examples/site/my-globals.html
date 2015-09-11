@@ -11,11 +11,29 @@
 					var routes = polyflex.routes = polyflex.routes || {};
 
 					routes = extend(routes, {
+						ANY: {
+							route: "/(.*)"
+						},
+						HOME: {
+							route: "/index/(.*)"
+						},
+						TEST: {
+							route: "/test"
+						},
 						HOME_PAGE: {
 							route: "/index.html"
 						},
+						ABOUT_PAGE: {
+							route: "/about.html"
+						},
+						ABOUT_ME_PAGE: {
+							route: "/aboutme.html"
+						},
 						TWO_COLUMN_1: {
 							route: "/twocolumn1.html"
+						},
+						TWO_COLUMN_ME_1: {
+							route: "/twocolumnme1.html"
 						},
 						TWO_COLUMN_2: {
 							route: "/twocolumn2.html"

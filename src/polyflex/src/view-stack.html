@@ -8,14 +8,21 @@
 			position: relative;
 			overflow: hidden;
 			display: block;
+			min-width: 100%;
+			/*transition: ease 0.3s;*/
 		}
 		:host ::content > * {
 			position: absolute;
+			top: 0;
+			left: 0;
 			display: none;
+			width: 100%;
+			z-index: 0;
 		}
 
 		:host ::content > *.selected {
 			/*position: relative;*/
+			z-index: 100;
 		}
 
 	</style>
@@ -31,8 +38,6 @@
 
 			var polyflex = window.polyflex = window.polyflex || {};
 			var behaviors = polyflex.behaviors = polyflex.behaviors || {};
-			var _routes = polyflex._routes;
-			var Route = polyflex.Route;
 			var Event = polyflex.Event;
 
 
@@ -40,15 +45,13 @@
 				is: "view-stack",
 				behaviors: [behaviors.EventBehavior, behaviors.RoutingBehavior],
 				extend: "div",
-				items: null,
 				routeContext: null,
-				_itemIsLoading: false,
-				_lastSelectedIndex: 0,
-				_resizeEffect: null,
-				_showEffect: null,
-				_hideEffect: null,
-				_urls: [],
 				properties: {
+					disabled: {
+						type: Boolean,
+						value: false,
+						reflectToAttribute: true
+					},
 					selectedIndex: {
 						type: Number,
 						value: 0,
@@ -68,11 +71,96 @@
 						observer: "setHideEffect"
 					}
 				},
+				created: function(){
+				},
+				attached: function () {
+					var self = this;
+					this.addEventListener("child-ready", this.debouncedUpdate, true);
+					this.addEventListener("child-removed", this.debouncedUpdate, true);
+					this.addEventListener(Event.SIZE_UPDATED, function (e) {
+						self.updateSize(e.detail.item, e.detail.skipAnimation);
+					});
+					
+					window.addEventListener("resize", function(e){
+						self.updateSize(self.items[self.selectedIndex], true);
+					});
+
+					this.addEventListener(Event.ELEMENT_SHOW, function (e) {
+						var idx = e.detail.viewStackIndex;
+						if (typeof idx !== "undefined") {
+							if (self.selectedIndex !== idx) {
+								e.detail.selectedItem.skipAnimation = true;
+								self.selectedIndex = idx;
+							} else {
+								self.showItem.call(self, self.items[idx], false);
+							}
+						}
+					});
+
+					this.addEventListener(Event.ELEMENT_HIDE, function (e) {
+						var idx = e.detail.viewStackIndex;
+						if (typeof idx !== "undefined") {
+							if (self.selectedIndex !== idx) {
+								e.detail.selectedItem.skipAnimation = true;
+								self.selectedIndex = idx;
+							} else {
+								self.hideItem.call(self, self.items[idx], false);
+							}
+						}
+					});
+
+					this.addEventListener(Event.ROUTE_FOUND, function (e) {
+						this.routeFound = true;
+						this.clearRouteFound();
+					});
+
+					/**
+					 * Global "routing" message listener.
+					 * It listens to all routing messages.
+					 */
+					this.onMessage({
+						channel: Channel.ROUTE_ENTER,
+						callback: function (context) {
+							// If specified route was found than we don't 
+							// search for les specific routes.
+							if (self.routeFound) {
+								self.clearRouteFound();
+								return;
+							}
+							// Searching through less specific routes if 1:1 
+							// specific route wasn't found.
+							for (var i = 0; i < self.sortedRoutes.length; ++i) {
+								if (self.isUrlMatching(self.sortedRoutes[i].realRoute)) {
+									if (self.selectedIndex !== self.sortedRoutes[i].index) {
+										self.enteringItemRoute(context, self.sortedRoutes[i].item);
+									}
+									break;
+								}
+							}
+						}
+					});
+
+					this.debouncedUpdate();
+				},
+				clearRouteFound: function () {
+					this.debounce('CLEAR-ROUTE-FOUND', function () {
+						this.routeFound = false;
+					}, 2);
+				},
+				detached: function () {
+					this.items = [];
+					this.routeContext = null;
+					this.removeAllroutes();
+				},
 				setShowEffect: function (newValue) {
-					this._showEffect = newValue && document.querySelector(newValue).clone();
+					this.async(function () {
+						this._showEffect = newValue && document.querySelector(newValue).clone();
+					});
 				},
 				setHideEffect: function (newValue) {
-					this._hideEffect = newValue && document.querySelector(newValue).clone();
+					this.async(function () {
+						this._hideEffect = newValue && document.querySelector(newValue).clone();
+					});
 				},
 				get showEffect() {
 					return this._showEffect;
@@ -83,6 +171,20 @@
 				get lastSelectedIndex() {
 					return this._lastSelectedIndex;
 				},
+				/**
+				 * Navigation direction:
+				 * -1 = back button
+				 * 1 = forward button
+				 * 0 = normal navigation (link clicked);
+				 * @returns Number
+				 */
+				get direction() {
+					try {
+						return polyflex.window.currentContext.state.direction;
+					} catch (e) {
+						return 0;
+					}
+				},
 				update: function () {
 					var self = this;
 					if (this.isRemoved) {
@@ -90,43 +192,112 @@
 					}
 
 					this._urls = [];
-					this.items = this.querySelectorAll("view-stack > *");
+					this.sortedRoutes = [];
+					this.items = this.getContentChildren();
 
 					for (var i = 0; i < this.items.length; ++i) {
 						var item = this.items[i];
 						item.index = i;
 						item.name = i;
-						var he = this._hideEffect.clone();
-						var inSpeed = he.speed;
-						he.speed = 0;
-						he.start(item, this, null, null, function () {
-							he.speed = inSpeed;
-						});
+						var he = this._hideEffect && this._hideEffect.clone();
+						if (he) {
+							var inSpeed = he.speed;
+							he.speed = 0;
+							he.start(item, this, null, null, function () {
+								he.speed = inSpeed;
+							}, true, true);
+						}
 
 						this.setUrlRouting(item);
 					}
-				},
-				setUrlRouting: function (item) {
-					var url = item.getAttribute("route");
-					if (url) {
 
-						this._urls[url] = this._urls[url] || [];
-						this._urls[url].push(item.index);
+					/**
+					 * Sorting routes based on the most specific route.
+					 * The most specific route should take place before other
+					 * routes. For example if we have routes:
+					 * /*
+					 * /index/*
+					 * /index/home/*
+					 * and url that is
+					 * /index/home/test
+					 * than /index/home/* should be matched as first and invoked.
+					 */
+					this.sortedRoutes.sort(function (a, b) {
+						var routeA = a.realRoute;
+						var routeB = b.realRoute;
+						routeA = routeA.replace(/\*.*?(\b|$)/g, "").replace(/\*/g, "").replace(/\/\//g, "/");
+						routeB = routeB.replace(/\*.*?(\b|$)/g, "").replace(/\*/g, "").replace(/\/\//g, "/");
+						return routeB.length - routeA.length;
+					});
+				},
+				debouncedUpdate: function () {
+					this.debounce("DEBOUNCE-UPDATE-ITEMS", function () {
+						this.update();
+
+						var urlFound = false;
+						for (var i = 0; i < this.items.length; ++i) {
+							var item = this.items[i];
+							var url = item.getAttribute("url");
+							var ctx = this.isUrlMatching(url);
+							if (ctx) {
+								this.urlChanged(ctx, item, true);
+								urlFound = true;
+								break;
+							}
+						}
+
+						if (!urlFound) {
+							this.indexChanged(this.selectedIndex);
+						}
+					}, 5);
+				},
+				/**
+				 * Register item routes in the url-router
+				 * 
+				 * @param {type} item
+				 * @returns {undefined}
+				 */
+				setUrlRouting: function (item) {
+					var route = item.getAttribute("route");
+					if (route) {
+
+						this._urls[route] = this._urls[route] || [];
+						var routeObj = {index: item.index, route: route, realRoute: this.getRoute(route), item: item};
+						this._urls[route].push(routeObj);
+						this.sortedRoutes.push(routeObj);
 
 						item.preventInvokingRequestOnEnteringRoute = true;
 						var self = this;
+
+						/**
+						 * Specific "routing" message listener.
+						 * It listens only routes specified on items in view-stack.
+						 */
 						this.onMessage({
 							channel: Channel.ROUTE_ENTER,
-							route: url,
+							route: route,
 							callback: function (context) {
+								this.routeFound = true;
+								self.parentElement.dispatchEvent(new CustomEvent(Event.ROUTE_FOUND));
 								self.enteringItemRoute(context, item);
+								self.clearRouteFound();
 							}
 						});
 
-						this.router.addRoute(url);
+
+
+						this.router.addRoute(route);
 					}
 
+					// Exit route can be any route in the whole application.
+					// When exiting this route view-stack will inform item
+					// that this route is exiting.
 					var exitRoute = item.getAttribute("exit-route");
+
+					/**
+					 * If exit route was specified specified exit route message
+					 * listener is registered.
+					 */
 					if (exitRoute) {
 						this.onMessage({
 							channel: Channel.ROUTE_EXIT,
@@ -154,6 +325,8 @@
 						this.selectedIndex = item.index;
 					}
 
+					//this.indexChanged(this.selectedIndex);
+
 					if (!this.isRemoved) {
 						item.invokeRequest(context);
 					}
@@ -162,184 +335,274 @@
 				exitingItemRoute: function (context, item, ignoreSameUrl) {
 					console.log("exiting route");
 				},
-				attached: function () {
-					this.addEventListener("child-ready", this.debouncedUpdate, true);
-					this.addEventListener("child-removed", this.debouncedUpdate, true);
-					this.debouncedUpdate();
-				},
-				debouncedUpdate: function () {
-					this.cancelDebouncer("DEBOUNCE-UPDATE-ITEMS");
-					this.debounce("DEBOUNCE-UPDATE-ITEMS", function () {
-						this.update();
-
-						var urlFound = false;
-						for (var i = 0; i < this.items.length; ++i) {
-							var item = this.items[i];
-							var url = item.getAttribute("url");
-							var ctx = this.isUrlMatching(url);
-							if (ctx) {
-								this.urlChanged(ctx, item, true);
-								urlFound = true;
-								break;
-							}
-						}
-
-						if (!urlFound) {
-							this.indexChanged(this.selectedIndex);
-						}
-
-						this.updateSize(this.items[this.selectedIndex]);
-					}, 5);
-				},
-				detached: function () {
-					this.items = [];
-					this.routeContext = null;
-					this.removeAllroutes();
-				},
 				indexChanged: function (newValue, oldValue) {
 					if (!this.items || this.items.length === 0) {
 						return;
 					}
 
-					var newItem = this.items[newValue];
-
-					if (newValue < 0 || newValue > this.items.length - 1) {
+					if (newValue < -1 || newValue > this.items.length - 1) {
 						this.selectedIndex = oldValue;
 						console.warn("the selectedIndex: " + newValue + " is out of range!");
 						return;
 					}
 
+					var newItem = this.items[newValue];
+					var oldItem = this.items[oldValue];
+
+
+
+					this.hideItem.call(this, oldItem, true);
+					this.showItem.call(this, newItem, true);
+
+					this._lastSelectedIndex = oldValue;
+				},
+				hideItem: function (item, animate) {
+
 					var self = this;
-					if (newItem.tagName.toLowerCase() === "element-loader" && !newItem.loadedElement) {
-						newItem.on(newItem, Event.ELEMENT_LOADED, function (e) {
-							if (newItem === self.items[self.selectedIndex]) {
-								self.indexChanged.call(self, newValue);
-							}
-						});
-						this._itemIsLoading = true;
-						this.debounce('ADD_PRELOADER', function () {
-							this.classList.add("preloading");
-						}, 1500);
-						newItem.load();
-					} else {
-						this._itemIsLoading = false;
-						this.cancelDebouncer('ADD_PRELOADER');
-						this.classList.remove("preloading");
-					}
+					var newItem = this.items[this.selectedIndex];
 
-					newItem.style.display = "block";
+					var detail = {
+						selectedItem: newItem,
+						lastSelectedItem: item,
+						viewStackIndex: this.index
+					};
+					this.parentElement.dispatchEvent(new CustomEvent(Event.ELEMENT_HIDE, {detail: detail}));
 
-					if (this._showEffect && !this._itemIsLoading) {
-						this._showEffect.kill();
-					}
-
-					if (typeof oldValue === "number") {
-						var oldItem = this.items[oldValue];
-						self.preHidden.call(self, oldItem);
+					if (item) {
+						self.preHidden.call(self, item);
 						if (!this._itemIsLoading) {
 							self.preShown.call(self, newItem);
 						}
-						if (this._hideEffect) {
-							this._hideEffect.start(oldItem, this,
-									function (e) {
-										self.startHiding.call(self, oldItem);
-									},
-									null,
-									function (e) {
-										self.hidden.call(self, oldItem);
-									});
+						if (self._hideEffect && animate) {
+							var effect = self._hideEffect;
+							if (detail.selectedItem.skipAnimation) {
+								effect = self._hideEffect.clone();
+								effect.speed = 0.01;
+								self.debounce('SKIP-ANIMATION', function () {
+									detail.selectedItem.skipAnimation = false;
+								}, 50);
+							}
+							if (self.direction === -1 && this._hideEffect.reverseOnBack) {
+								if (this._showEffect) {
+									effect = this._showEffect;
+								}
+								effect.backward(item, this,
+										function (e) {
+											self.startHiding.call(self, item);
+										},
+										null,
+										function (e) {
+											self.hidden.call(self, item);
+										});
+							} else {
+								effect.start(item, this,
+										function (e) {
+											self.startHiding.call(self, item);
+										},
+										null,
+										function (e) {
+											self.hidden.call(self, item);
+										});
+							}
+
 						} else {
-							self.startHiding.call(self, oldItem);
-							self.hidden.call(self, oldItem);
+							self.startHiding.call(self, item);
+							self.hidden.call(self, item);
 						}
 					} else {
-						if (!this._itemIsLoading) {
-							this.preShown(newItem);
+						if (!self._itemIsLoading) {
+							self.preShown(newItem);
 						}
-						//this.updateSize(newItem);
 					}
+				},
+				showItem: function (item, animate) {
 
+					var self = this;
+
+					var detail = {
+						selectedItem: item,
+						viewStackIndex: this.index
+					};
+
+					this.parentElement.dispatchEvent(new CustomEvent(Event.ELEMENT_SHOW, {detail: detail}));
+
+					if (item.nodeName === "ELEMENT-LOADER" && !item.isLoadingElement && !item.loadedElement) {
+						item.on(item, Event.ELEMENT_LOADED, function (e) {
+							if (item === self.items[self.selectedIndex]) {
+								self.showItem.call(self, item, animate);
+							}
+						});
+
+						self.debounce('ADD_PRELOADER', function () {
+							self.classList.add("preloading");
+						}, 1500);
+						item.load();
+						return;
+					} else {
+
+
+						self._itemIsLoading = false;
+						self.cancelDebouncer('ADD_PRELOADER');
+						self.classList.remove("preloading");
+
+
+					}
 					if (!this._itemIsLoading) {
-						if (this._showEffect) {
-							this._showEffect.start(newItem, this,
-									function (e) {
-										self.startShowing.call(self, newItem);
-									},
-									null,
-									function (e) {
-										self.shown.call(self, newItem);
-									});
-						} else {
-							self.startShowing.call(self, newItem);
-							self.shown.call(self, newItem);
-							//self.updateSize(newItem);
-						}
+						if (this._showEffect && animate) {
+							var effect = this._showEffect;
 
-						this._lastSelectedIndex = oldValue;
-						var lastSelected = this.items[oldValue];
-						var newSelected = this.items[newValue];
-
-						if (lastSelected) {
-							lastSelected.classList.remove("selected");
-							if (lastSelected.classList.length === 0) {
-								lastSelected.removeAttribute("class");
+							if (detail.selectedItem.skipAnimation) {
+								effect = self._showEffect.clone();
+								effect.speed = 0.01;
+								self.debounce('SKIP-ANIMATION', function () {
+									detail.selectedItem.skipAnimation = false;
+								}, 2000);
 							}
-						}
-
-						if (newSelected) {
-							newSelected.classList.add("selected");
-						}
-					}
-				},
-				updateSize: function (item, skipAnimation) {
-					if (this.resizeToContent && item) {
-						this.debounce("RESIZE-ITEM", function () {
-							if (skipAnimation) {
-								TweenMax.set(this, {width: item.offsetWidth, height: item.offsetHeight});
+							if (this.direction === -1 && this._showEffect.reverseOnBack) {
+								if (this._hideEffect) {
+									effect = this._hideEffect;
+								}
+								effect.backward(item, this,
+										function (e) {
+											self.startShowing.call(self, item);
+										},
+										null,
+										function (e) {
+											self.shown.call(self, item);
+										});
 							} else {
-								var self = this;
-								TweenMax.to(this, .4, {width: item.offsetWidth, height: item.offsetHeight, onComplete: function () {
-										var cr = self.routeContext && self.routeContext.currentRoute && self.routeContext.currentRoute.context;
-										if (cr && cr.direction === 0) {
-											self.scrollToAnchor();
-										}
-									}
-								});
+								effect.start(item, this,
+										function (e) {
+											self.startShowing.call(self, item);
+										},
+										null,
+										function (e) {
+											self.shown.call(self, item);
+										});
 							}
-						}, 2);
+						} else {
+							self.startShowing.call(self, item);
+							self.shown.call(self, item);
+
+						}
+
+						if (item) {
+							item.classList.add("selected");
+						}
+
+
 					}
 				},
-				preShown: function (item) {
-					item.style.display = "initial";
-					this.callLifecycleFunctions(item, "preShown");
-					var cr = this.routeContext && this.routeContext.currentRoute && this.routeContext.currentRoute.context;
-					if (cr && cr.direction !== 0) {
-						this.updateSize(item, true);
+//				hideItems: function (e) {
+//					for (var i = 0; i < this.items.length; ++i) {
+//						var item = this.items[i];
+//
+//						if ((!e && item !== this.items[this.selectedIndex]) || (e && item !== e.detail.selectedItem)) {
+//							item.classList.remove("selected");
+//							if (item.classList.length === 0) {
+//								item.removeAttribute("class");
+//							}
+//						}
+//					}
+//				},
+				updateSize: function (item, skipAnimation) {
+
+					if (this.parentElement.nodeName !== "VIEW-STACK"
+							|| (this.parentElement.nodeName === "VIEW-STACK"
+									&& this.parentElement.selectedIndex === this.index)) {
+						if (this.resizeToContent && item) {
+							this.debounce("RESIZE-ITEM", function () {
+								var self = this;
+//							this.style.width = item.offsetWidth + "px";
+//							this.style.height = item.offsetHeight + "px";
+
+								var cs = window.getComputedStyle(item);
+								var width = "auto";
+								var height = "auto";
+								if(item.offsetWidth){
+									width = item.offsetWidth + parseInt(cs.marginLeft) + parseInt(cs.marginRight) - 30;
+								}
+								if(item.offsetHeight){
+									height = item.offsetHeight + parseInt(cs.marginTop) + parseInt(cs.marginBottom);
+								}
+
+								if (skipAnimation) {
+									TweenMax.set(this, {width: width, height: height});
+									self.parentElement.dispatchEvent(new CustomEvent(Event.SIZE_UPDATED, {detail: {item: item, skipAnimation: skipAnimation}}));
+								} else {
+
+									TweenMax.to(this, .4, {width: width, height: height, onComplete: function () {
+											self.parentElement.dispatchEvent(new CustomEvent(Event.SIZE_UPDATED, {detail: {item: item, skipAnimation: skipAnimation}}));
+										}
+									});
+								}
+							}, 10);
+						}
 					}
+				},
+				
+				
+				preShown: function (item) {
+					item.style.zIndex = this.items.length;
+					this.callLifecycleFunctions(item, "preShown");
 				},
 				startShowing: function (item) {
+					item.style.display = "block";
+					this.debounce('CLEAR-MIN-DIMENSIONS', function(){
+					this.style.minWidth = "";
+					this.style.minHeight = "";
+					}, 100);
 					this.callLifecycleFunctions(item, "startShowing");
+					this.updateSize(item);
 				},
 				shown: function (item) {
+					item.style.position = "relative";
+					
 					this.callLifecycleFunctions(item, "shown");
 					this.updateSize(item);
-//					this.scrollToAnchor();
+					
+					if (this.routeContext && this.routeContext.currentRoute.context.state.direction === 0) {
+						this.scrollToAnchor(this.getElementFromHash());
+					} else {
+						this.scrollToAnchor();
+					}
+//					setTimeout(function () {
+//
+//						var wo = polyflex.window.state[polyflex.window.url];
+//						if (wo) {
+//							TweenMax.set(window, {scrollTo: {x: wo.x, y: wo.y}});
+//						}
+//					}, 200);
 				},
 				preHidden: function (item) {
-//					item.style.position = "absolute";
+					var cs = window.getComputedStyle(item);
+					item.style.position = "absolute";
+					item.style.zIndex = item.index;
+					this.updateSize(item);
+					
+					this.cancelDebouncer('SAVE-SCROLL-POSITION');
 					this.debounce('PRE-HIDDEN', function () {
 						this.callLifecycleFunctions(item, "preHidden");
 					}, 1);
 				},
 				startHiding: function (item) {
+					this.style.minHeight = item.offsetHeight + "px";
+					this.style.minWidth = item.offsetWidth + "px";
 					this.callLifecycleFunctions(item, "startHiding");
+					this.cancelDebouncer('SAVE-SCROLL-POSITION');
 				},
 				hidden: function (item) {
-					item.style.display = "none";
+					this.cancelDebouncer('SAVE-SCROLL-POSITION');
+					item.style.display = "";
+
+//					this.hideItems();
 					this.callLifecycleFunctions(item, "hidden");
 				},
 				callLifecycleFunctions: function (item, func) {
-					if (item.tagName.toLowerCase() === "element-loader") {
+					if (item && item.nodeName === "VIEW-STACK") {
+						return;
+					}
+					if (item.nodeName === "ELEMENT-LOADER") {
 						if (!item.loadedElement) {
 							if (func === "startShowing") {
 								item.load();
@@ -362,7 +625,7 @@
 					}
 					if (typeof item[func] === "function") {
 						var route = item.getAttribute("route") || location.href;
-						var rt = Route[route.replace("Route.", "")] || Route[route] || _routes[route];
+						var rt = self.getRoute(route);
 						var obj = {item: item, routeContext: this.routeContext, phase: func};
 						this.sendMessage({
 							channel: Channel.TRANSITION_LIFECYCLE,
